@@ -137,9 +137,16 @@ shrub(3, -1500, -5200, 560);
 shrub(5, -2100, -7600, 620);
 shrub(6, 1900, -4300, 640);
 // 천막 (그림 비율 864x1001), 원뿔 텐트 (672x1005)
-[[-1100, -8200, 0], [-1700, -9000, 1], [1300, -8600, 1], [2000, -9400, 0], [-700, -9700, 1], [900, -9900, 0]].forEach(([x, z, f]) => place(img('img/tent.webp', f), x, z, 340, 394));
-place(img('img/teepee.webp'), 1500, -7600, 240, 359);
-place(img('img/teepee.webp', 1), -2400, -10400, 230, 344);
+// 텐트 여러 종류 [그림, 가로, 세로] — 그림 비율대로
+const TENT = { tent: [380, 260], tent2: [380, 247], dome1: [400, 221], dome2: [400, 232], dome3: [400, 227], teepee: [250, 272] };
+const tent = (n, x, z, f) => place(img(`img/${n}.webp`, f), x, z, ...TENT[n]);
+tent('tent', -1100, -8200, 0); tent('dome2', -1750, -9000, 0); tent('dome1', 1300, -8600, 1); tent('tent2', 2000, -9400, 0);
+tent('dome3', -700, -9800, 1); tent('tent2', 950, -9900, 1); tent('dome1', -2300, -8300, 0); tent('tent', 2600, -8200, 1);
+tent('teepee', 1600, -7600, 0); tent('teepee', -2400, -10400, 1);
+// 무대 옆 드럼 두 개, 망원경
+place(img('img/drum1.webp'), -440, -10250, 70, 120);
+place(img('img/drum2.webp'), 470, -10300, 70, 108);
+place(img('img/telescope.webp'), -1500, -7300, 120, 149);
 place('<img src="img/truck.webp" alt="">', -900, -7000, 500, 214);
 place('<img src="img/suv.webp" alt="">', 1050, -7400, 400, 259); // 오른쪽 SUV (그림 비율 800x517)
 place('<img src="img/stage.webp" alt="">', 0, -10600, 960, 971);
@@ -253,6 +260,23 @@ function quad(x0, x1, f0, f1, color) {
   ctx.closePath(); ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.stroke();
 }
 
+// 입체로 바뀔수록 물건 아래 바닥에 부드러운 그림자 (해는 왼쪽 앞 → 그림자는 오른쪽 뒤로 살짝)
+function drawShadows() {
+  const k = C.rise; if (k < .02) return;
+  for (const it of items) {
+    if (it === titleItem || it.bottom !== EYE) continue;
+    const n = -it.z - C.walk, r = it.w * .55;
+    const [Xc, dc] = cam3(it.x + r * .25, n + r * .2);
+    if (dc < NEAR + 20) continue;
+    const c = proj(Xc, dc, C.eye), e = proj(...cam3(it.x + r * 1.25, n + r * .2), C.eye), b = proj(...cam3(it.x + r * .25, n + r * 1.1), C.eye);
+    const rx = Math.hypot(e[0] - c[0], e[1] - c[1]), ry = Math.max(rx * .1, Math.abs(c[1] - b[1]));
+    if (c[0] + rx < 0 || c[0] - rx > W || c[1] > H + ry) continue;
+    ctx.save(); ctx.translate(c[0], c[1]); ctx.scale(1, ry / rx);
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+    g.addColorStop(0, `rgba(40,60,22,${.5 * k})`); g.addColorStop(.55, `rgba(40,60,22,${.26 * k})`); g.addColorStop(1, 'rgba(48,70,28,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, rx, 0, 7); ctx.fill(); ctx.restore();
+  }
+}
 function drawGrass() {
   const list = [];
   for (const g of GRASS) {
@@ -282,6 +306,7 @@ function render() {
   const bob = Math.sin(walk / 70) * 3 * Math.min(1, cp * 20) * (1 - cp);
   C = { P, walk, strafe: cmx * 2 * STRAFE * hov, cos: Math.cos(a), sin: Math.sin(a), zoom: H > W ? W / 560 : Math.min(H / 900, W / 1440), cx: W / 2, hy: H * (H > W ? .74 - .2 * rise : .88 - .46 * rise) + bob, eye, yaw: a, rise };
   drawGround();
+  drawShadows();
   drawGrass();
   for (const it of items) {
     const [X, d] = cam3(it.x, -it.z - walk);
