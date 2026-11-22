@@ -146,7 +146,8 @@ const tent = (n, x, z, f) => { place(img(`img/${n}.webp`, f), x, z, ...TENT[n]);
 // 왼쪽
 tent('teepee', -1700, -6200, 0); tent('tent', -2400, -6900, 0); tent('tent', -1900, -9400, 1); // 무대 바로 왼쪽 3개는 제거
 // 오른쪽: 아이보리 3개(열린 tent, 닫힌 tent2) + 하늘색 열린 돔 1개
-tent('tent2', 1500, -8000, 0); tent('dome2', 950, -9000, 1); // 오른쪽: 닫힌 아이보리 1 + 분홍 1
+tent('tent2', 1250, -6600, 0); // 오른쪽: 닫힌 아이보리 (관목보다 한 단계 앞)
+tent('dome2', 700, -11800, 1); // 분홍 텐트는 무대 뒤로
 // 무대 뒤
 
 // 망원경
@@ -343,8 +344,9 @@ void main(){
   vec3 col = mix(g1, g2, mask);                          // 두 잔디를 큰 얼룩 모양으로 섞어 반복을 숨김
   col = mix(col, col * (m / vec3(.67, .74, .41)), .28);  // 넓은 수채 얼룩
   float sd = 0.;                                          // 텐트 밑 그림자
-  for (int i = 0; i < 16; i++) { if (i >= uShN) break; float r = length((w - uSh[i].xy) / uSh[i].zw); sd += 1. - smoothstep(.78, 1.12, r); }
-  col *= 1. - .34 * min(1., sd);
+  // 부드러운 그림자: 넓게 번지는 반그림자 + 바닥에 닿는 곳만 조금 진하게, 회색 대신 푸른 초록빛으로 어둡게
+  for (int i = 0; i < 16; i++) { if (i >= uShN) break; float r = length((w - uSh[i].xy) / uSh[i].zw); sd += .55 * (1. - smoothstep(.55, 1.35, r)) + .45 * (1. - smoothstep(.82, 1.02, r)); }
+  col *= mix(vec3(1.), vec3(.70, .78, .76), .42 * min(1., sd));
   float fade = clamp((n - 2500.) / 3000., 0., 1.);
   col = mix(col, vec3(200., 198., 124.) / 255., fade);
   gl_FragColor = vec4(col, 1.);
