@@ -141,17 +141,18 @@ shrub(6, 1900, -4300, 640);
 // 텐트 여러 종류 [그림, 가로, 세로] — 그림 비율대로
 const TENT = { tent: [570, 390], tent2: [570, 370], dome1: [600, 332], dome2: [600, 348], dome3: [600, 341], teepee: [375, 409] }; // 1.5배
 const SHADOWS = []; // 바닥 그림자 (땅 x, 땅 앞뒤 f, 너비, 종류)
-const tent = (n, x, z, f) => { place(img(`img/${n}.webp`, f), x, z, ...TENT[n]); SHADOWS.push([x * KX, -z * KZ, TENT[n][0], 'tent']); };
+const tent = (n, x, z, f, k = 1) => { place(img(`img/${n}.webp`, f), x, z, TENT[n][0] * k, TENT[n][1] * k); SHADOWS.push([x * KX, -z * KZ, TENT[n][0] * k, 'tent']); };
 // 앞(가까움) → 뒤(무대 근처)로 나눠 배치, 무대 정면은 비워둠
 // 왼쪽
 tent('teepee', -1700, -6200, 0); tent('tent', -2400, -6900, 0); tent('tent', -1900, -9400, 1); // 무대 바로 왼쪽 3개는 제거
 // 오른쪽: 아이보리 3개(열린 tent, 닫힌 tent2) + 하늘색 열린 돔 1개
 tent('tent2', 1250, -6600, 0); // 오른쪽: 닫힌 아이보리 (관목보다 한 단계 앞)
-place(img('img/wood.webp'), 1600, -6100, 110, 123); // 장작: 아이보리 텐트 오른쪽 앞
-place(img('img/suvfront.webp'), 420, -8700, 240, 237); SHADOWS.push([420 * KX, 8700 * KZ, 240, 'car']); // 정면 SUV: 무대 오른쪽 앞
+place(img('img/wood.webp'), 1450, -6100, 176, 197); // 장작: 아이보리 텐트 오른쪽 앞
+place(img('img/suvfront.webp'), 1780, -6700, 300, 297); SHADOWS.push([1780 * KX, 6700 * KZ, 300, 'car']); // 정면 SUV: 아이보리 텐트 오른쪽 앞
+shrub(4, 1900, -6300, 280); // SUV를 살짝 가리는 관목
 place(img('img/scarecrow.webp'), -1250, -5700, 160, 211);
 shrub(1, -1230, -5450, 260); // 허수아비 아랫부분을 살짝 가리는 관목 // 허수아비: 왼쪽 앞 들판
-tent('dome2', 1150, -11800, 1); // 분홍 텐트는 무대 뒤로
+tent('dome2', 1150, -11800, 1, 1.45); // 뒤로 간 만큼 키워서 원래 보이던 크기로 // 분홍 텐트는 무대 뒤로
 // 무대 뒤
 
 // 망원경
