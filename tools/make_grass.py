@@ -23,12 +23,12 @@ base = np.array([196, 205, 118], float)      # 연두
 deep = np.array([150, 178, 86], float)       # 짙은 초록
 warm = np.array([222, 214, 140], float)      # 노르스름
 
-t = np.clip(0.5 + 0.28 * big + 0.18 * mid, 0, 1)[..., None]
+t = np.clip(0.5 + 0.10 * big + 0.12 * mid, 0, 1)[..., None]  # 큰 얼룩은 약하게 (반복 덜 보이게, 큰 얼룩은 mottle.webp가 담당)
 col = base * (1 - t) + deep * t
-w = np.clip(0.25 - 0.3 * pnoise(2.0, 5), 0, 1)[..., None]
+w = np.clip(0.22 - 0.12 * pnoise(2.0, 5), 0, 1)[..., None]
 col = col * (1 - w) + warm * w
 # 수채 번짐 가장자리: 등고선 근처를 살짝 진하게
-for lvl in (-0.6, 0.0, 0.7):
+for lvl in (-1.2, 1.3):
     edge = np.exp(-((big + 0.4 * mid - lvl) / 0.05) ** 2)[..., None]
     col -= edge * 10
 # 종이 결·안료 알갱이
@@ -58,7 +58,7 @@ img = img.convert('RGBA'); img.alpha_composite(layer)
 
 # 아주 드문 작은 꽃 점
 fl = Image.new('RGBA', (W, H), (0, 0, 0, 0)); fd = ImageDraw.Draw(fl)
-for _ in range(70):
+for _ in range(30):
     x, y = rng.uniform(0, W), rng.uniform(0, H)
     c = [(250, 248, 236), (240, 196, 206), (200, 190, 232), (250, 232, 150)][rng.integers(4)]
     for k in range(rng.integers(1, 4)):
