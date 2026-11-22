@@ -143,14 +143,19 @@ function cam3(x, f) {
 const NEAR = 24;
 function proj(X, d, y) { const s = C.P / d * C.zoom; return [C.cx + X * s, C.hy + y * s, s]; }
 
+const SKY = new Image(); SKY.src = 'img/sky.webp';
 function drawGround() {
   // 하늘
   const hz = C.hy, z = C.zoom, ox = -C.yaw * W * .9;
   const g = ctx.createLinearGradient(0, hz - H * 1.1, 0, hz);
   g.addColorStop(0, '#6fa7c4'); g.addColorStop(.6, '#b9d8e2'); g.addColorStop(1, '#e8e6d6');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = 'rgba(255,255,255,.72)';
-  [[.18, .62, 130, 18], [.75, .75, 170, 22], [.52, .45, 90, 12]].forEach(([x, y, rx, ry]) => { ctx.beginPath(); ctx.ellipse(W * x + ox * .4, hz - H * y * .8, rx * z, ry * z, 0, 0, 7); ctx.fill(); });
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); // 이미지 로딩 전 대신 보이는 하늘
+  if (SKY.complete && SKY.naturalWidth) {
+    // 수채화 하늘: 지평선에 아랫단을 맞추고 화면을 덮음, 좌우 호버 때 살짝 따라 움직임 (원본 가장자리 종이 여백 4%는 잘라냄)
+    const cw = SKY.naturalWidth * .92, ch = SKY.naturalHeight * .92, sx = SKY.naturalWidth * .04, sy = SKY.naturalHeight * .04;
+    const sc = Math.max(W * 1.2 / cw, (hz + 60) / ch), dw = cw * sc, dh = ch * sc;
+    ctx.drawImage(SKY, sx, sy, cw, ch, (W - dw) / 2 + ox * .25, hz + 60 - dh, dw, dh);
+  }
   // 모래 언덕 (지평선에 붙어서 같이 움직임)
   const dune = (amp, base, col, ph, par) => {
     ctx.beginPath(); ctx.moveTo(-50, hz + 2);
