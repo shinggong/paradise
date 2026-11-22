@@ -126,7 +126,7 @@ place(ART.yellowTree(), 1900, -4300, 460, 550);
 [[-1100, -8200, '#eef4f4'], [-1700, -9000, '#d9ecf0'], [1300, -8600, '#f3f0ea'], [2000, -9400, '#e2eef0'], [-700, -9700, '#f0ece2'], [900, -9900, '#dcecef']].forEach(([x, z, c]) => place(ART.tent(c), x, z, 420, 230));
 place(ART.teepee(), 1500, -7600, 260, 350);
 place(ART.teepee(), -2400, -10400, 240, 325);
-place(ART.truck(), -900, -7000, 460, 212);
+place('<img src="img/truck.webp" alt="">', -900, -7000, 500, 213);
 place('<img src="img/stage.webp" alt="">', 0, -10600, 960, 971);
 
 // ===== 카메라 계산 (바닥 캔버스와 물건이 같은 식을 씀) =====
@@ -149,6 +149,12 @@ const NEAR = 24;
 function proj(X, d, y) { const s = C.P / d * C.zoom; return [C.cx + X * s, C.hy + y * s, s]; }
 
 const SKY = new Image(); SKY.src = 'img/sky.webp';
+// 배경 바위산 (x: 가운데 위치 비율, w: 너비, sink: 지평선 아래로 묻는 깊이, par: 좌우 호버 시차)
+const ROCKS = [
+  { n: 2, x: .52, w: 900, sink: 14, par: .45 },
+  { n: 3, x: .16, w: 640, sink: 16, par: .6 },
+  { n: 1, x: .84, w: 820, sink: 16, par: .7 },
+].map(r => Object.assign(r, { img: Object.assign(new Image(), { src: `img/rock${r.n}.webp` }) }));
 // 구름 (x: 가로 위치 비율, y: 지평선 위 높이, w: 너비, par: 호버 시 움직임 정도, speed: 흐르는 속도 px/초)
 const CLOUDS = [
   { n: 3, x: .12, y: 380, w: 440, par: .35, speed: 5 },
@@ -182,7 +188,13 @@ function drawGround() {
     for (let x = -50; x <= W + 50; x += 20) { const u = (x - ox * par) / W; ctx.lineTo(x, hz - base * z - amp * z * (.55 + .45 * Math.sin(u * 4.2 + ph) * Math.sin(u * 1.7 + ph * 2))); }
     ctx.lineTo(W + 50, hz + 2); ctx.closePath(); ctx.fillStyle = col; ctx.fill();
   };
-  dune(170, 50, '#e4d2a6', .4, .6); dune(90, 14, '#d8c393', 2.1, 1);
+  dune(60, 6, '#d8c393', 2.1, 1); // 바위산 사이를 메우는 낮은 모래 언덕
+  // 바위산 (먼 것부터, 지평선에 아랫단을 묻음)
+  for (const r of ROCKS) {
+    if (!r.img.complete || !r.img.naturalWidth) continue;
+    const w = r.w * z, h = w * r.img.naturalHeight / r.img.naturalWidth;
+    ctx.drawImage(r.img, r.x * W - w / 2 + ox * r.par, hz + r.sink * z - h, w, h);
+  }
   ctx.fillStyle = 'rgb(150,180,96)'; ctx.fillRect(0, hz, W, H); // 지평선 아래는 먼 초원 색
   const step = 60, base = Math.floor((C.walk + FOCUS - C.P) / step) * step; // 줄무늬는 땅에 고정 → 걸으면 발밑으로 흘러옴
   const sand = [150, 180, 96]; // 먼 초원은 옅은 연두로 흐려짐
