@@ -11,7 +11,7 @@
   .stage { position: sticky; top: 0; height: 100vh; overflow: hidden; }
   .bg { display: none; } /* 하늘·언덕은 캔버스에서 지평선 위치에 맞춰 그림 */
   .bg svg { width: 100%; height: 100%; display: block; }
-  #ground { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #ground, #gl { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
   .obj { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
   .obj svg { width: 100%; height: 100%; display: block; overflow: visible; }
   .obj > img { width: 100%; height: 100%; display: block; }
@@ -61,6 +61,7 @@
     </svg></div>
 
     <canvas id="ground"></canvas>
+    <canvas id="gl"></canvas>
     <div class="hint" id="hint">SCROLL ↓</div>
   </div>
 </div>
@@ -139,17 +140,18 @@ shrub(6, 1900, -4300, 640);
 // 천막 (그림 비율 864x1001), 원뿔 텐트 (672x1005)
 // 텐트 여러 종류 [그림, 가로, 세로] — 그림 비율대로
 const TENT = { tent: [570, 390], tent2: [570, 370], dome1: [600, 332], dome2: [600, 348], dome3: [600, 341], teepee: [375, 409] }; // 1.5배
-const tent = (n, x, z, f) => place(img(`img/${n}.webp`, f), x, z, ...TENT[n]);
+const TENT_SH = []; // 텐트 밑 그림자 (땅 x, 땅 앞뒤 f, 너비)
+const tent = (n, x, z, f) => { place(img(`img/${n}.webp`, f), x, z, ...TENT[n]); TENT_SH.push([x * KX, -z * KZ, TENT[n][0]]); };
 // 앞(가까움) → 뒤(무대 근처)로 나눠 배치, 무대 정면은 비워둠
 // 왼쪽 5개
-tent('teepee', -1700, -6200, 0); tent('tent', -2400, -6900, 0); tent('dome3', -1000, -8300, 0); tent('tent', -1900, -9400, 1); tent('tent2', -900, -10100, 1);
-// 오른쪽: 아이보리 3개(열린 tent, 닫힌 tent2) + 하늘색 2개(닫힌 dome1, 열린 dome2)
-tent('dome1', 1050, -6500, 1); tent('tent', 1950, -6300, 1); tent('tent2', 1500, -8000, 0); tent('dome2', 950, -9000, 1); tent('tent2', 1800, -9700, 1);
+tent('teepee', -1700, -6200, 0); tent('tent', -2400, -6900, 0); tent('tent2', -1000, -8300, 0); tent('tent', -1900, -9400, 1); tent('tent2', -900, -10100, 1);
+// 오른쪽: 아이보리 3개(열린 tent, 닫힌 tent2) + 하늘색 열린 돔 1개
+tent('tent', 1950, -6300, 1); tent('tent2', 1500, -8000, 0); tent('dome2', 950, -9000, 1); tent('tent2', 1800, -9700, 1);
 // 무대 뒤 2개
-tent('dome3', -750, -11800, 1); tent('teepee', 750, -11600, 0);
+tent('tent', -750, -11800, 1); tent('teepee', 750, -11600, 0);
 // 망원경
 place(img('img/telescope.webp'), -1500, -7300, 120, 149);
-place('<img src="img/truck.webp" alt="">', -900, -7000, 500, 214);
+place('<img src="img/truck.webp" alt="">', -900, -7000, 650, 278);
 place('<img src="img/stage.webp" alt="">', 0, -10600, 960, 971);
 
 // ===== 카메라 계산 (바닥 캔버스와 물건이 같은 식을 씀) =====
@@ -222,8 +224,8 @@ function drawGround() {
   // 잔디 그림을 바닥에 원근으로 깔기: 앞뒤 띠 × 좌우 조각마다 평면 변환으로 패턴을 붙임 (땅에 고정 → 걸으면 발밑으로 흘러옴)
   if (!MPAT && MOTTLE_IMG.complete && MOTTLE_IMG.naturalWidth) MPAT = ctx.createPattern(MOTTLE_IMG, 'repeat');
   if (!GPAT && GRASS_IMG.complete && GRASS_IMG.naturalWidth) GPAT = ctx.createPattern(GRASS_IMG, 'repeat'); // 직접 만든 이음새 없는 수채화 잔디 (tools/make_grass.py)
-  let n0 = FOCUS - C.P - C.walk + C.walk; // 눈 위치(걷는 사람 기준)
-  n0 = Math.max(n0, FOCUS - C.P);
+  if (GL.ok) return; // 바닥은 WebGL이 그림 (아래는 WebGL 안 될 때만 쓰는 예비 방식)
+  let n0 = FOCUS - C.P;
   while (n0 < FAR) {
     const st = 40 + Math.max(0, n0 - (FOCUS - C.P)) * .08, n1 = n0 + st;
     const fade = Math.min(1, Math.max(0, (n0 - 2500) / 3000)); // 멀수록 옅게
@@ -304,6 +306,75 @@ function drawGrass() {
   for (const [, im, x, y, w, h] of list) if (im.complete) ctx.drawImage(im, x, y, w, h);
 }
 
+// ===== WebGL 바닥: 화면 픽셀마다 땅 위치를 거꾸로 계산해 잔디를 원근 그대로 칠함 (타일 반복·사파리 속도 개선) =====
+const GL = (() => {
+  const c = document.getElementById('gl'), g = c.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false });
+  if (!g) { c.style.display = 'none'; return { ok: false }; }
+  const sh = (t, src) => { const o = g.createShader(t); g.shaderSource(o, src); g.compileShader(o); if (!g.getShaderParameter(o, g.COMPILE_STATUS)) console.error(g.getShaderInfoLog(o)); return o; };
+  const pr = g.createProgram();
+  g.attachShader(pr, sh(g.VERTEX_SHADER, 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}'));
+  g.attachShader(pr, sh(g.FRAGMENT_SHADER, `
+precision highp float;
+uniform vec2 uRes; uniform float uDpr;
+uniform vec4 uCam;   // cx, 지평선 y, P*zoom, 눈높이
+uniform vec4 uRot;   // cos, sin, 옆이동, P
+uniform vec3 uWalk;  // 걸은 거리, FOCUS, FAR
+uniform sampler2D uGrass, uMottle;
+uniform vec4 uSh[16]; uniform int uShN;
+vec2 rot(vec2 v, float a){ float c=cos(a), s=sin(a); return vec2(c*v.x - s*v.y, s*v.x + c*v.y); }
+void main(){
+  vec2 s = vec2(gl_FragCoord.x, uRes.y * uDpr - gl_FragCoord.y) / uDpr;
+  float k = (s.y - uCam.y) / uCam.w; if (k <= 0.0) discard;
+  float d = uCam.z / k, X = (s.x - uCam.x) / k, Z = d - uRot.w;
+  float x = X * uRot.x + Z * uRot.y + uRot.z, n = -X * uRot.y + Z * uRot.x + uWalk.y;
+  if (n > uWalk.z) discard;
+  vec2 w = vec2(x, n + uWalk.x);                       // 땅 좌표
+  vec3 g1 = texture2D(uGrass, rot(w + vec2(900., 0.), .23) / vec2(1400., -933.)).rgb;
+  vec3 g2 = texture2D(uGrass, rot(w - vec2(517., -311.), -.71) / vec2(2150., -1433.)).rgb;
+  vec3 m  = texture2D(uMottle, rot(w, .27) / 6000.).rgb;
+  float mask = smoothstep(.38, .62, texture2D(uMottle, rot(w, 1.3) / 4300. + .37).g * 1.4 - .2);
+  vec3 col = mix(g1, g2, mask);                          // 두 잔디를 큰 얼룩 모양으로 섞어 반복을 숨김
+  col = mix(col, col * (m / vec3(.67, .74, .41)), .28);  // 넓은 수채 얼룩
+  float sd = 0.;                                          // 텐트 밑 그림자
+  for (int i = 0; i < 16; i++) { if (i >= uShN) break; vec2 q = (w - uSh[i].xy) / uSh[i].zw; sd += exp(-dot(q, q) * 2.6); }
+  col *= 1. - .42 * min(1., sd);
+  float fade = clamp((n - 2500.) / 3000., 0., 1.);
+  col = mix(col, vec3(200., 198., 124.) / 255., fade);
+  gl_FragColor = vec4(col, 1.);
+}`));
+  g.linkProgram(pr); g.useProgram(pr);
+  const b = g.createBuffer(); g.bindBuffer(g.ARRAY_BUFFER, b); g.bufferData(g.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), g.STATIC_DRAW);
+  const loc = g.getAttribLocation(pr, 'p'); g.enableVertexAttribArray(loc); g.vertexAttribPointer(loc, 2, g.FLOAT, false, 0, 0);
+  const U = n => g.getUniformLocation(pr, n);
+  const aniso = g.getExtension('EXT_texture_filter_anisotropic');
+  const tex = (im, unit, name, pw, ph) => {
+    const t = g.createTexture(); g.activeTexture(g.TEXTURE0 + unit); g.bindTexture(g.TEXTURE_2D, t);
+    const cv = document.createElement('canvas'); cv.width = pw; cv.height = ph; cv.getContext('2d').drawImage(im, 0, 0, pw, ph); // 2의 거듭제곱 크기로 (밉맵용)
+    g.texImage2D(g.TEXTURE_2D, 0, g.RGB, g.RGB, g.UNSIGNED_BYTE, cv); g.generateMipmap(g.TEXTURE_2D);
+    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR_MIPMAP_LINEAR); g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
+    if (aniso) g.texParameterf(g.TEXTURE_2D, aniso.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(8, g.getParameter(aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
+    g.uniform1i(U(name), unit);
+  };
+  const st = { ok: true, g, c, U, ready: 0 };
+  const load = (im, unit, name, pw, ph) => { const f = () => { tex(im, unit, name, pw, ph); st.ready++; }; im.complete && im.naturalWidth ? f() : im.addEventListener('load', f); };
+  load(GRASS_IMG, 0, 'uGrass', 2048, 1024); load(MOTTLE_IMG, 1, 'uMottle', 512, 512);
+  return st;
+})();
+function drawGL() {
+  if (!GL.ok) return;
+  const { g, c, U } = GL, r = Math.min(devicePixelRatio || 1, 2);
+  if (c.width !== Math.round(W * r) || c.height !== Math.round(H * r)) { c.width = Math.round(W * r); c.height = Math.round(H * r); g.viewport(0, 0, c.width, c.height); }
+  g.clearColor(0, 0, 0, 0); g.clear(g.COLOR_BUFFER_BIT);
+  if (GL.ready < 2) return;
+  g.uniform2f(U('uRes'), W, H); g.uniform1f(U('uDpr'), c.width / W);
+  g.uniform4f(U('uCam'), C.cx, C.hy, C.P * C.zoom, C.eye);
+  g.uniform4f(U('uRot'), C.cos, C.sin, C.strafe, C.P);
+  g.uniform3f(U('uWalk'), C.walk, FOCUS, FAR);
+  const sh = new Float32Array(64); TENT_SH.slice(0, 16).forEach(([x, f, w], i) => sh.set([x, f + w * .03, w * .52, w * .2], i * 4)); // 텐트 바로 밑, 살짝 뒤로
+  g.uniform4fv(U('uSh[0]'), sh); g.uniform1i(U('uShN'), Math.min(16, TENT_SH.length));
+  g.drawArrays(g.TRIANGLE_STRIP, 0, 4);
+}
+
 function render() {
   cp += (p - cp) * .07; cmx += (mx - cmx) * .07; cmy += (my - cmy) * .07;
   // 스크롤 앞부분: 땅에 붙어 있던 눈이 올라가며 바닥면이 드러남(평면 → 입체), 뒷부분: 앞으로 걸어감
@@ -319,6 +390,7 @@ function render() {
   const bob = Math.sin(walk / 70) * 3 * Math.min(1, cp * 20) * (1 - cp);
   C = { P, walk, strafe: cmx * 2 * STRAFE * hov, cos: Math.cos(a), sin: Math.sin(a), zoom: H > W ? W / 560 : Math.min(H / 900, W / 1440), cx: W / 2, hy: H * (H > W ? .74 - .2 * rise : .88 - .46 * rise) + bob, eye, yaw: a, rise };
   drawGround();
+  drawGL();
   drawGrass();
   for (const it of items) {
     const [X, d] = cam3(it.x, -it.z - walk);
