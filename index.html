@@ -477,6 +477,13 @@ window.onYouTubeIframeAPIReady = () => {
     events: { onReady: () => { ytReady = true; if (wantPlay) yt.playVideo(); } } });
 };
 const ytScript = document.createElement('script'); ytScript.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(ytScript);
+// 엔터·스페이스로 소리 켜기/끄기 (스페이스로 페이지가 내려가지 않게 막음)
+addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ' || e.code === 'Space') && !e.repeat) {
+    if (e.target.closest && e.target.closest('button, a, input, textarea')) return; // 버튼에 포커스가 있으면 기본 동작에 맡김
+    e.preventDefault(); soundBtn.click();
+  }
+});
 soundBtn.addEventListener('click', () => {
   wantPlay = !wantPlay;
   soundBtn.classList.toggle('playing', wantPlay); playerBox.classList.toggle('show', wantPlay);
