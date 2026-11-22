@@ -115,17 +115,22 @@ for (let i = 0; i < 200; i++) {
   const z = R(-DEPTH + 2000, 9000), x = R(-2400, 2400);
   grass(ART.flower(pick(['#ffffff', '#fff4c2', '#f6b6c8', '#c9e6ff'])), x, z, 20, 40);
 }
-for (let i = 0; i < 30; i++) {
+// 노란 관목 (이미지 6종, 가로세로 비율)
+const SHRUB = [[801, 315], [900, 210], [489, 311], [824, 267], [584, 341], [900, 416]];
+const img = (src, flip) => `<img src="${src}" alt=""${flip ? ' style="transform:scaleX(-1)"' : ''}>`;
+const shrub = (n, x, z, w) => place(img(`img/shrub${n}.webp`, rnd() < .5), x, z, w, w * SHRUB[n - 1][1] / SHRUB[n - 1][0]);
+for (let i = 0; i < 24; i++) {
   const side = rnd() < .5 ? -1 : 1;
-  place(ART.bush(pick(['#6d8b3a', '#7f9c45', '#5c7a32'])), side * R(700, 2600), R(-11500, -300), 200, 116);
+  shrub(1 + Math.floor(rnd() * 6), side * R(700, 2600), R(-11500, -300), R(300, 440));
 }
 // 캠프 (무대 근처)
-place(ART.yellowTree(), -1500, -5200, 520, 620);
-place(ART.yellowTree(), -2100, -7600, 560, 670);
-place(ART.yellowTree(), 1900, -4300, 460, 550);
-[[-1100, -8200, '#eef4f4'], [-1700, -9000, '#d9ecf0'], [1300, -8600, '#f3f0ea'], [2000, -9400, '#e2eef0'], [-700, -9700, '#f0ece2'], [900, -9900, '#dcecef']].forEach(([x, z, c]) => place(ART.tent(c), x, z, 420, 230));
-place(ART.teepee(), 1500, -7600, 260, 350);
-place(ART.teepee(), -2400, -10400, 240, 325);
+shrub(3, -1500, -5200, 560);
+shrub(5, -2100, -7600, 620);
+shrub(6, 1900, -4300, 640);
+// 천막 (그림 비율 864x1001), 원뿔 텐트 (672x1005)
+[[-1100, -8200, 0], [-1700, -9000, 1], [1300, -8600, 1], [2000, -9400, 0], [-700, -9700, 1], [900, -9900, 0]].forEach(([x, z, f]) => place(img('img/tent.webp', f), x, z, 340, 394));
+place(img('img/teepee.webp'), 1500, -7600, 240, 359);
+place(img('img/teepee.webp', 1), -2400, -10400, 230, 344);
 place('<img src="img/truck.webp" alt="">', -900, -7000, 500, 214);
 place('<img src="img/stage.webp" alt="">', 0, -10600, 960, 971);
 
