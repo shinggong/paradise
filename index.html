@@ -23,6 +23,7 @@
   #loader span { font-size: 13px; letter-spacing: .4em; color: #fff; text-shadow: 0 1px 8px rgba(40,70,100,.35); animation: loadPulse 1.6s ease-in-out infinite; }
   #loader b { font-weight: 400; margin-left: .6em; }
   #loader.done { opacity: 0; visibility: hidden; }
+  .thumb .title3d p, .thumb #hint { display: none; }
   @keyframes loadPulse { 50% { opacity: .45; } }
   nav { position: fixed; top: 0; left: 0; right: 0; z-index: 300000; display: flex; justify-content: space-between; align-items: center; padding: 22px 40px; font-size: 13px; letter-spacing: .15em; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.2); }
   nav .logo { font-family: Georgia, serif; font-size: 22px; letter-spacing: 0; }
@@ -48,6 +49,7 @@
 </style>
 </head>
 <body>
+<script>addEventListener("error",()=>{const l=document.getElementById("loader");l&&l.classList.add("done")});setTimeout(()=>{const l=document.getElementById("loader");l&&l.classList.add("done")},12000);if(/[?&]thumb/.test(location.search))document.documentElement.classList.add("thumb");</script>
 <div id="loader"><span>LOADING<b id="loadPct"></b></span></div>
 <nav><div><span>STORY</span><span>MAP</span></div><div><span>SHOP</span><span>CONTACT</span><button id="sound" aria-label="소리 켜기" title="소리 켜기/끄기">
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#fff"/><g class="on"><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></g><g class="off"><path d="M17 9l5 6M22 9l-5 6"/></g></svg>
@@ -75,6 +77,8 @@
 
 
 <script>
+const INTRO = { t0: null };
+const THUMB = /[?&]thumb/.test(location.search); // 썸네일 캡처용: 인트로·안내 문구 없이, 제목은 하늘 위로
 // ===== 설정 =====
 const EYE = 230;      // 눈높이 (바닥이 눈보다 얼마나 아래 있는지)
 const DEPTH = 13000; // 물건 흩뿌리는 범위
@@ -163,7 +167,8 @@ place('<img id="dance" src="img/dance/d00.webp" alt="">', 0, -9000, 586, 504); /
 SHADOWS.push([-170 * KX, 9000 * KZ, 200, 'car'], [170 * KX, 9000 * KZ, 200, 'car']);
 { // 스톱모션: 장마다 아주 살짝 흔들림(손으로 옮긴 듯), 정수 픽셀만 (회전·소수점은 흐려 보임)
   const el = document.getElementById('dance'); let f = 0;
-  setInterval(() => { f = (f + 1) % DANCE.length; if (DANCE[f].complete) el.src = DANCE[f].src; el.style.transform = `translate(${Math.round((Math.random() - .5) * 3)}px, ${Math.round((Math.random() - .5) * 2)}px)`; }, 1000 / 8); }
+  const N = DANCE.length, seq = [...Array(N).keys(), ...Array.from({ length: N - 2 }, (_, i) => N - 2 - i)]; // 0→21→1 되감기
+  setInterval(() => { f = (f + 1) % seq.length; const fr = DANCE[seq[f]]; if (fr.complete) el.src = fr.src; el.style.transform = `translate(${Math.round((Math.random() - .5) * 3)}px, ${Math.round((Math.random() - .5) * 2)}px)`; }, 1000 / 8); }
 place(img('img/scarecrow.webp'), -1250, -5700, 160, 211);
 shrub(1, -1230, -5450, 260); // 허수아비 아랫부분을 살짝 가리는 관목 // 허수아비: 왼쪽 앞 들판
 tent('dome2', 1150, -11800, 1, 1.45); // 뒤로 간 만큼 키워서 원래 보이던 크기로 // 분홍 텐트는 무대 뒤로
@@ -217,14 +222,15 @@ const CLOUDS = [
 function drawGround() {
   // 하늘
   const hz = C.hy, z = C.zoom, ox = -C.yaw * W * .9;
+  const hs = hz - C.iOff * .72; // 하늘·구름은 덜 움직여서 깊이감
   const g = ctx.createLinearGradient(0, hz - H * 1.1, 0, hz);
   g.addColorStop(0, '#6fa7c4'); g.addColorStop(.6, '#b9d8e2'); g.addColorStop(1, '#e8e6d6');
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); // 이미지 로딩 전 대신 보이는 하늘
   if (SKY.complete && SKY.naturalWidth) {
     // 수채화 하늘: 지평선에 아랫단을 맞추고 화면을 덮음, 좌우 호버 때 살짝 따라 움직임 (원본 가장자리 종이 여백 4%는 잘라냄)
     const cw = SKY.naturalWidth * .92, ch = SKY.naturalHeight * .92, sx = SKY.naturalWidth * .04, sy = SKY.naturalHeight * .04;
-    const sc = Math.max(W * 1.2 / cw, (hz + 60) / ch), dw = cw * sc, dh = ch * sc;
-    ctx.drawImage(SKY, sx, sy, cw, ch, (W - dw) / 2 + ox * .25, hz + 60 - dh, dw, dh);
+    const sc = Math.max(W * 1.2 / cw, (hs + 60) / ch), dw = cw * sc, dh = ch * sc;
+    ctx.drawImage(SKY, sx, sy, cw, ch, (W - dw) / 2 + ox * .25, hs + 60 - dh, dw, dh);
   }
   // 구름: 천천히 흘러가고, 좌우 호버 때 높이(거리)에 따라 조금씩 다르게 움직임
   const now = performance.now() / 1000;
@@ -232,7 +238,7 @@ function drawGround() {
     if (!c.img.complete || !c.img.naturalWidth) continue;
     const w = c.w * z, h = w * c.img.naturalHeight / c.img.naturalWidth, span = W + w * 2;
     const x = ((c.x * W + now * c.speed + ox * c.par) % span + span) % span - w;
-    ctx.drawImage(c.img, x, hz - c.y * z - h, w, h);
+    ctx.drawImage(c.img, x, hs - c.y * z - h, w, h);
   }
   // 모래 언덕 (지평선에 붙어서 같이 움직임)
   const dune = (amp, base, col, ph, par) => {
@@ -419,7 +425,10 @@ function render() {
   const hov = .25 + .75 * rise;                          // 스크롤 전엔 좌우 호버를 약하게
   const a = -cmx * 2 * ORBIT * hov;                       // 좌우: 초점 중심 회전
   const bob = Math.sin(walk / 70) * 3 * Math.min(1, cp * 20) * (1 - cp);
-  C = { P, walk, strafe: cmx * 2 * STRAFE * hov, cos: Math.cos(a), sin: Math.sin(a), zoom: H > W ? W / 560 : Math.min(H / 900, W / 1440), cx: W / 2, hy: H * (H > W ? .74 - .2 * rise : .88 - .46 * rise) + bob, eye, yaw: a, rise };
+  // 인트로: 로딩이 끝나면 하늘을 보던 카메라가 2.6초 동안 내려옴 (장면이 아래에서 올라옴)
+  const it0 = INTRO.t0 === null ? 0 : Math.min(1, (performance.now() - INTRO.t0) / 2600), ie = 1 - Math.pow(1 - it0, 3);
+  const iOff = THUMB ? 0 : (1 - ie) * H * 1.15;
+  C = { iOff, P, walk, strafe: cmx * 2 * STRAFE * hov, cos: Math.cos(a), sin: Math.sin(a), zoom: H > W ? W / 560 : Math.min(H / 900, W / 1440), cx: W / 2, hy: H * (H > W ? .74 - .2 * rise : .88 - .46 * rise) + bob + iOff, eye, yaw: a, rise };
   drawGround();
   drawGL();
   drawGrass();
@@ -429,7 +438,8 @@ function render() {
     if (show) {
       const [sx, sy, s] = proj(X, d, eye - (EYE - it.bottom)); // 땅 높이는 눈높이에 따라
       const L = sx - it.w / 2 * s; let T = sy - it.h * s - (it === titleItem && H > W ? H * .05 : 0); // 세로 화면이면 제목을 살짝 위로
-      if (it === titleItem) T += Math.max(0, 58 - T) * (1 - Math.min(1, cp / .15)); // 시작 화면에서 제목 윗부분이 화면 위로 잘리지 않게 (스크롤하면 원래대로)
+      if (it === titleItem) T += Math.max(0, 58 - T) * (1 - Math.min(1, cp / .15));
+      if (it === titleItem && THUMB) T = H * .07; // 시작 화면에서 제목 윗부분이 화면 위로 잘리지 않게 (스크롤하면 원래대로)
       show = L < W && L + it.w * s > 0 && T < H && s < 40 && (it.h > 400 || it.h * s < H * .75); // 눈앞에서 너무 커진 풀·꽃은 숨김 (무대 같은 큰 건 제외)
       if (it === titleItem) { // 제목은 다가오며 커지면 흐려지다 사라짐 (너무 크게 키웠다가 돌아올 때 이미지가 덜 그려지는 문제 방지)
         const k = s / C.zoom, op = Math.min(1, Math.max(0, (2.8 - k) / 1));
@@ -441,9 +451,9 @@ function render() {
     }
     if (show !== it.shown) { it.d.style.visibility = show ? '' : 'hidden'; it.shown = show; } // display:none 대신 visibility → 다시 보일 때 이미지 새로 안 불러옴
   }
-  hint.style.opacity = cp > .03 ? 0 : 1;
+  hint.style.opacity = cp > .03 || it0 < .95 ? 0 : 1; // 인트로 끝난 뒤에 안내 표시
 }
-function frame() { render(); requestAnimationFrame(frame); }
+function frame() { try { render(); } catch (e) { if (!frame.err) { frame.err = 1; console.error(e); } } requestAnimationFrame(frame); }
 frame();
 
 // ===== 소리: 악뮤 '소문의 낙원' 공식 뮤직비디오 (유튜브) — 스피커를 누르면 재생/멈춤 =====
@@ -466,10 +476,10 @@ soundBtn.addEventListener('click', () => {
   const imgs = [...document.images, ...DANCE, SKY, GRASS_IMG, MOTTLE_IMG, ...ROCKS.map(r => r.img), ...CLOUDS.map(c => c.img)];
   let done = 0; const pct = document.getElementById('loadPct');
   const tick = () => { done++; pct.textContent = Math.round(done / imgs.length * 100) + '%'; };
-  const wait = im => (im.complete && im.naturalWidth ? Promise.resolve() : new Promise(r => { im.addEventListener('load', r, { once: true }); im.addEventListener('error', r, { once: true }); })).then(() => im.decode ? im.decode().catch(() => {}) : 0).then(tick);
-  const finish = () => document.getElementById('loader').classList.add('done');
-  Promise.all(imgs.map(wait)).then(() => requestAnimationFrame(() => requestAnimationFrame(finish)));
-  setTimeout(finish, 15000); // 너무 오래 걸리면 그냥 열기
+  const wait = im => (im.complete && im.naturalWidth ? Promise.resolve() : new Promise(r => { im.addEventListener('load', r, { once: true }); im.addEventListener('error', r, { once: true }); })).then(() => im.decode ? Promise.race([im.decode().catch(() => {}), new Promise(r => setTimeout(r, 1200))]) : 0).then(tick); // 모바일에서 decode()가 안 끝나는 경우가 있어 1.2초 제한
+  const finish = () => { const l = document.getElementById('loader'); if (l.classList.contains('done')) return; l.classList.add('done'); INTRO.t0 = performance.now() + 250; };
+  Promise.all(imgs.map(wait)).then(() => setTimeout(finish, 120)); // rAF는 백그라운드·저전력에서 멈출 수 있어 setTimeout 사용
+  setTimeout(finish, 9000); // 너무 오래 걸리면 그냥 열기
 })();
 </script>
 </body>
