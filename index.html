@@ -15,22 +15,6 @@
   .obj { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
   .obj svg { width: 100%; height: 100%; display: block; overflow: visible; }
   .obj > img { width: 100%; height: 100%; display: block; }
-  /* 춤추는 두 사람: 발을 축으로 좌우로 흔들고, 박자마다 무릎 굽히듯 살짝 내려앉음. 여자는 치마 아랫단이 따로 흔들림 */
-  .dancer { position: absolute; inset: 0; transform-origin: 50% 100%; animation: sway 1.3s ease-in-out infinite; }
-  .dancer.f { animation-delay: -.65s; }
-  .dancer img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-  .dancer .top { clip-path: inset(0 0 36% 0); }
-  .dancer .skirt { clip-path: inset(64% -30% 0 -30%); transform-origin: 50% 64%; animation: skirt 1.3s ease-in-out infinite; animation-delay: inherit; }
-  @keyframes sway {
-    0%, 100% { transform: rotate(-5deg) scaleY(1); }
-    25% { transform: rotate(0deg) scaleY(.94) scaleX(1.025); }
-    50% { transform: rotate(5deg) scaleY(1); }
-    75% { transform: rotate(0deg) scaleY(.94) scaleX(1.025); }
-  }
-  @keyframes skirt {
-    0%, 100% { transform: skewX(8deg); }
-    50% { transform: skewX(-8deg); }
-  }
   .title3d { text-align: center; white-space: nowrap; font-family: "Didot", "Bodoni 72", Georgia, serif; color: #fffdf4; text-shadow: 0 6px 30px rgba(60,90,110,.35); }
   .title3d img { width: 820px; height: auto; display: block; margin: 0 auto; filter: drop-shadow(0 2px 1.5px rgba(110,40,80,.22)) drop-shadow(0 12px 22px rgba(90,50,90,.14)); } /* 글자 바로 아래 옅은 그림자 + 넓게 퍼지는 그림자 */
   .title3d p { font-family: -apple-system, sans-serif; font-size: 20px; letter-spacing: .5em; margin-top: 24px; opacity: .9; }
@@ -173,10 +157,11 @@ tent('tent2', 1250, -6600, 0); // 오른쪽: 닫힌 아이보리 (관목보다 �
 place(img('img/wood.webp'), 1450, -6100, 176, 197); // 장작: 아이보리 텐트 오른쪽 앞
 place(img('img/suvfront.webp'), 1860, -5150, 300, 297); SHADOWS.push([1860 * KX, 5150 * KZ, 300, 'car']); // 정면 SUV: 장작 앞, 더 오른쪽
 shrub(4, 1830, -5450, 280); // SUV 뒤 관목
-// 무대 앞 가운데에서 춤추는 두 사람
-place('<div class="dancer m"><img src="img/dancer_m.webp" alt=""></div>', -170, -9000, 188, 420);
-place('<div class="dancer f"><img class="top" src="img/dancer_f.webp" alt=""><img class="skirt" src="img/dancer_f.webp" alt=""></div>', 170, -9000, 182, 420);
+// 무대 앞 가운데에서 춤추는 두 사람 (영상에서 뽑은 32장, 12fps로 반복)
+const DANCE = Array.from({ length: 32 }, (_, i) => Object.assign(new Image(), { src: `img/dance/d${String(i).padStart(2, '0')}.webp` }));
+place('<img id="dance" src="img/dance/d00.webp" alt="">', 0, -9000, 488, 420);
 SHADOWS.push([-170 * KX, 9000 * KZ, 200, 'car'], [170 * KX, 9000 * KZ, 200, 'car']);
+{ const el = document.getElementById('dance'); let f = 0; setInterval(() => { f = (f + 1) % DANCE.length; if (DANCE[f].complete) el.src = DANCE[f].src; }, 1000 / 12); }
 place(img('img/scarecrow.webp'), -1250, -5700, 160, 211);
 shrub(1, -1230, -5450, 260); // 허수아비 아랫부분을 살짝 가리는 관목 // 허수아비: 왼쪽 앞 들판
 tent('dome2', 1150, -11800, 1, 1.45); // 뒤로 간 만큼 키워서 원래 보이던 크기로 // 분홍 텐트는 무대 뒤로
@@ -476,7 +461,7 @@ soundBtn.addEventListener('click', () => {
 
 // ===== 로딩: 페이지 안 그림 + 캔버스용 그림이 모두 준비되면 로딩 화면 걷기 =====
 (() => {
-  const imgs = [...document.images, SKY, GRASS_IMG, MOTTLE_IMG, ...ROCKS.map(r => r.img), ...CLOUDS.map(c => c.img)];
+  const imgs = [...document.images, ...DANCE, SKY, GRASS_IMG, MOTTLE_IMG, ...ROCKS.map(r => r.img), ...CLOUDS.map(c => c.img)];
   let done = 0; const pct = document.getElementById('loadPct');
   const tick = () => { done++; pct.textContent = Math.round(done / imgs.length * 100) + '%'; };
   const wait = im => (im.complete && im.naturalWidth ? Promise.resolve() : new Promise(r => { im.addEventListener('load', r, { once: true }); im.addEventListener('error', r, { once: true }); })).then(() => im.decode ? im.decode().catch(() => {}) : 0).then(tick);
