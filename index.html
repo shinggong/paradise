@@ -15,7 +15,7 @@
   .obj { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
   .obj svg { width: 100%; height: 100%; display: block; overflow: visible; }
   .title3d { text-align: center; white-space: nowrap; font-family: "Didot", "Bodoni 72", Georgia, serif; color: #fffdf4; text-shadow: 0 6px 30px rgba(60,90,110,.35); }
-  .title3d img { width: 1000px; height: auto; display: block; margin: 0 auto; filter: drop-shadow(0 6px 24px rgba(60,90,110,.3)); }
+  .title3d img { width: 820px; height: auto; display: block; margin: 0 auto; filter: drop-shadow(0 6px 24px rgba(60,90,110,.3)); }
   .title3d p { font-family: -apple-system, sans-serif; font-size: 20px; letter-spacing: .5em; margin-top: 24px; opacity: .9; }
   nav { position: fixed; top: 0; left: 0; right: 0; z-index: 300000; display: flex; justify-content: space-between; align-items: center; padding: 22px 40px; font-size: 13px; letter-spacing: .15em; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.2); }
   nav .logo { font-family: Georgia, serif; font-size: 22px; letter-spacing: 0; }
@@ -95,7 +95,7 @@ function place(html, x, z, w, h, bottom = EYE, cls = 'obj') {
   items.push({ d, x: x * KX, z: z * KZ, w, h, bottom, shown: true });
 }
 // 제목 (처음 초점 위치에 있어서 평면↔입체 때 크기 유지, 걸어가면 통과)
-place('<div class="title3d"><img src="img/title.webp" alt="Paradise of Rumors"><p>SCROLL TO WALK IN</p></div>', 0, -FOCUS / KZ, 1400, 520, -40, 'obj');
+place('<div class="title3d"><img src="img/title.webp" alt="Paradise of Rumors"><p>SCROLL TO WALK IN</p></div>', 0, -FOCUS / KZ, 1400, 440, -40, 'obj');
 // 잔디·꽃: 아래쪽 입체감의 핵심 (발밑으로 쏟아져 들어옴)
 for (let i = 0; i < 560; i++) {
   const z = R(-DEPTH + 1500, 9000), x = R(-2600, 2600);
