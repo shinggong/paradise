@@ -428,7 +428,9 @@ function render() {
   // 인트로: 로딩이 끝나면 하늘을 보던 카메라가 2.6초 동안 내려옴 (장면이 아래에서 올라옴)
   const it0 = INTRO.t0 === null ? 0 : Math.min(1, (performance.now() - INTRO.t0) / 2600), ie = 1 - Math.pow(1 - it0, 3);
   const iOff = THUMB ? 0 : (1 - ie) * H * 1.15;
-  C = { iOff, P, walk, strafe: cmx * 2 * STRAFE * hov, cos: Math.cos(a), sin: Math.sin(a), zoom: H > W ? W / 560 : Math.min(H / 900, W / 1440), cx: W / 2, hy: H * (H > W ? .74 - .2 * rise : .88 - .46 * rise) + bob + iOff, eye, yaw: a, rise };
+  // 제목은 배경보다 0.45초 늦게, 조금 더 천천히 따라 내려옴 (시간차로 입체감)
+  const it1 = INTRO.t0 === null ? 0 : Math.min(1, Math.max(0, (performance.now() - INTRO.t0 - 450) / 2700)), iOffT = THUMB ? 0 : Math.pow(1 - it1, 3) * H * 1.15;
+  C = { iOff, iOffT, P, walk, strafe: cmx * 2 * STRAFE * hov, cos: Math.cos(a), sin: Math.sin(a), zoom: H > W ? W / 560 : Math.min(H / 900, W / 1440), cx: W / 2, hy: H * (H > W ? .74 - .2 * rise : .88 - .46 * rise) + bob + iOff, eye, yaw: a, rise };
   drawGround();
   drawGL();
   drawGrass();
@@ -439,7 +441,8 @@ function render() {
       const [sx, sy, s] = proj(X, d, eye - (EYE - it.bottom)); // 땅 높이는 눈높이에 따라
       const L = sx - it.w / 2 * s; let T = sy - it.h * s - (it === titleItem && H > W ? -H * .02 : 0); // 세로 화면이면 제목을 살짝 위로
       if (it === titleItem) T += Math.max(0, 58 - T) * (1 - Math.min(1, cp / .15));
-      if (it === titleItem && THUMB) T = H * .06; // 시작 화면에서 제목 윗부분이 화면 위로 잘리지 않게 (스크롤하면 원래대로)
+      if (it === titleItem && THUMB) T = H * .06;
+      if (it === titleItem) T += C.iOffT - C.iOff; // 시작 화면에서 제목 윗부분이 화면 위로 잘리지 않게 (스크롤하면 원래대로)
       show = L < W && L + it.w * s > 0 && T < H && s < 40 && (it.h > 400 || it.h * s < H * .75); // 눈앞에서 너무 커진 풀·꽃은 숨김 (무대 같은 큰 건 제외)
       if (it === titleItem) { // 제목은 다가오며 커지면 흐려지다 사라짐 (너무 크게 키웠다가 돌아올 때 이미지가 덜 그려지는 문제 방지)
         const k = s / C.zoom, op = Math.min(1, Math.max(0, (2.8 - k) / 1));
