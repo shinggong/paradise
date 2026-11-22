@@ -142,6 +142,13 @@ const NEAR = 24;
 function proj(X, d, y) { const s = C.P / d * C.zoom; return [C.cx + X * s, C.hy + y * s, s]; }
 
 const SKY = new Image(); SKY.src = 'img/sky.webp';
+// 구름 (x: 가로 위치 비율, y: 지평선 위 높이, w: 너비, par: 호버 시 움직임 정도, speed: 흐르는 속도 px/초)
+const CLOUDS = [
+  { n: 3, x: .12, y: 380, w: 440, par: .35, speed: 5 },
+  { n: 2, x: .70, y: 230, w: 520, par: .5, speed: 8 },
+  { n: 1, x: .48, y: 560, w: 270, par: .22, speed: 3 },
+  { n: 4, x: .95, y: 470, w: 330, par: .3, speed: 4 },
+].map(c => Object.assign(c, { img: Object.assign(new Image(), { src: `img/cloud${c.n}.webp` }) }));
 function drawGround() {
   // 하늘
   const hz = C.hy, z = C.zoom, ox = -C.yaw * W * .9;
@@ -153,6 +160,14 @@ function drawGround() {
     const cw = SKY.naturalWidth * .92, ch = SKY.naturalHeight * .92, sx = SKY.naturalWidth * .04, sy = SKY.naturalHeight * .04;
     const sc = Math.max(W * 1.2 / cw, (hz + 60) / ch), dw = cw * sc, dh = ch * sc;
     ctx.drawImage(SKY, sx, sy, cw, ch, (W - dw) / 2 + ox * .25, hz + 60 - dh, dw, dh);
+  }
+  // 구름: 천천히 흘러가고, 좌우 호버 때 높이(거리)에 따라 조금씩 다르게 움직임
+  const now = performance.now() / 1000;
+  for (const c of CLOUDS) {
+    if (!c.img.complete || !c.img.naturalWidth) continue;
+    const w = c.w * z, h = w * c.img.naturalHeight / c.img.naturalWidth, span = W + w * 2;
+    const x = ((c.x * W + now * c.speed + ox * c.par) % span + span) % span - w;
+    ctx.drawImage(c.img, x, hz - c.y * z - h, w, h);
   }
   // 모래 언덕 (지평선에 붙어서 같이 움직임)
   const dune = (amp, base, col, ph, par) => {
