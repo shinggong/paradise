@@ -11,7 +11,7 @@
   .stage { position: sticky; top: 0; height: 100vh; overflow: hidden; }
   .bg { display: none; } /* 하늘·언덕은 캔버스에서 지평선 위치에 맞춰 그림 */
   .bg svg { width: 100%; height: 100%; display: block; }
-  #haze { position: absolute; left: 0; right: 0; pointer-events: none; background: linear-gradient(to bottom, rgba(236,236,226,0), rgba(236,236,226,.55) 55%, rgba(232,234,222,.35) 75%, rgba(232,234,222,0)); }
+  #haze { position: absolute; left: 0; right: 0; pointer-events: none; background: linear-gradient(to bottom, rgba(236,236,226,0), rgba(236,236,226,.45) 55%, rgba(232,234,222,0)); }
   #ground, #gl { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
   .obj { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
   .obj svg { width: 100%; height: 100%; display: block; overflow: visible; }
@@ -431,7 +431,7 @@ function render() {
     }
     if (show !== it.shown) { it.d.style.visibility = show ? '' : 'hidden'; it.shown = show; } // display:none 대신 visibility → 다시 보일 때 이미지 새로 안 불러옴
   }
-  const hz = document.getElementById('haze'), hh = 300 * C.zoom; hz.style.top = (C.hy - hh * .6) + 'px'; hz.style.height = hh + 'px';
+  const hz = document.getElementById('haze'), hh = 90 * C.zoom; hz.style.top = (C.hy - hh * .55) + 'px'; // 지평선에 붙은 얇은 띠 hz.style.height = hh + 'px';
   hint.style.opacity = cp > .03 ? 0 : 1;
 }
 function frame() { render(); requestAnimationFrame(frame); }
