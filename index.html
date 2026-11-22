@@ -14,8 +14,9 @@
   #ground { position: absolute; inset: 0; width: 100%; height: 100%; }
   .obj { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
   .obj svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .obj > img { width: 100%; height: 100%; display: block; }
   .title3d { text-align: center; white-space: nowrap; font-family: "Didot", "Bodoni 72", Georgia, serif; color: #fffdf4; text-shadow: 0 6px 30px rgba(60,90,110,.35); }
-  .title3d img { width: 820px; height: auto; display: block; margin: 0 auto; filter: drop-shadow(0 6px 24px rgba(60,90,110,.3)); }
+  .title3d img { width: 820px; height: auto; display: block; margin: 0 auto; filter: drop-shadow(0 2px 1.5px rgba(110,40,80,.22)) drop-shadow(0 12px 22px rgba(90,50,90,.14)); } /* 글자 바로 아래 옅은 그림자 + 넓게 퍼지는 그림자 */
   .title3d p { font-family: -apple-system, sans-serif; font-size: 20px; letter-spacing: .5em; margin-top: 24px; opacity: .9; }
   nav { position: fixed; top: 0; left: 0; right: 0; z-index: 300000; display: flex; justify-content: space-between; align-items: center; padding: 22px 40px; font-size: 13px; letter-spacing: .15em; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.2); }
   nav .logo { font-family: Georgia, serif; font-size: 22px; letter-spacing: 0; }
@@ -96,6 +97,7 @@ function place(html, x, z, w, h, bottom = EYE, cls = 'obj') {
 }
 // 제목 (처음 초점 위치에 있어서 평면↔입체 때 크기 유지, 걸어가면 통과)
 place('<div class="title3d"><img src="img/title.webp" alt="Paradise of Rumors"><p>SCROLL TO WALK IN</p></div>', 0, -FOCUS / KZ, 1400, 440, -40, 'obj');
+const titleItem = items[items.length - 1];
 // 잔디·꽃: 아래쪽 입체감의 핵심 (발밑으로 쏟아져 들어옴)
 for (let i = 0; i < 560; i++) {
   const z = R(-DEPTH + 1500, 9000), x = R(-2600, 2600);
@@ -120,7 +122,7 @@ place(ART.yellowTree(), 1900, -4300, 460, 550);
 place(ART.teepee(), 1500, -7600, 260, 350);
 place(ART.teepee(), -2400, -10400, 240, 325);
 place(ART.truck(), -900, -7000, 460, 212);
-place(ART.stage(), 0, -10600, 600, 630);
+place('<img src="img/stage.webp" alt="">', 0, -10600, 620, 627);
 
 // ===== 카메라 계산 (바닥 캔버스와 물건이 같은 식을 씀) =====
 const track = document.querySelector('.track'), hint = document.getElementById('hint'), bg = document.getElementById('bg');
@@ -206,7 +208,7 @@ function render() {
     let show = d > NEAR + 10;
     if (show) {
       const [sx, sy, s] = proj(X, d, eye - (EYE - it.bottom)); // 땅 높이는 눈높이에 따라
-      const L = sx - it.w / 2 * s, T = sy - it.h * s;
+      const L = sx - it.w / 2 * s, T = sy - it.h * s - (it === titleItem && H > W ? H * .1 : 0); // 세로 화면이면 제목을 살짝 위로
       show = L < W && L + it.w * s > 0 && T < H && s < 40 && it.h * s < H * .75; // 눈앞에서 너무 커진 건 숨김
       if (show) { it.d.style.transform = `translate3d(${L}px, ${T}px, 0) scale(${s})`; it.d.style.zIndex = Math.round(100000 - d); }
     }
