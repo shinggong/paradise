@@ -195,17 +195,39 @@ function drawGround() {
     const w = r.w * z, h = w * r.img.naturalHeight / r.img.naturalWidth;
     ctx.drawImage(r.img, r.x * W - w / 2 + ox * r.par, hz + r.sink * z - h, w, h);
   }
-  ctx.fillStyle = 'rgb(150,180,96)'; ctx.fillRect(0, hz, W, H); // 지평선 아래는 먼 초원 색
-  const step = 60, base = Math.floor((C.walk + FOCUS - C.P) / step) * step; // 줄무늬는 땅에 고정 → 걸으면 발밑으로 흘러옴
-  const sand = [150, 180, 96]; // 먼 초원은 옅은 연두로 흐려짐
-  for (let f0 = base; f0 < C.walk + FAR; f0 += step) {
-    const n0 = f0 - C.walk, n1 = n0 + step; // 걷는 사람 기준 앞쪽 거리
-    const k = Math.round(f0 / step) & 1;
-    const fade = Math.min(1, Math.max(0, (n0 - 2500) / 3000)); // 멀수록 옅은 연두
-    const g = k ? [111, 155, 61] : [124, 170, 71];
-    const col = g.map((v, i) => Math.round(v + (sand[i] - v) * fade));
-    quad(-20000, 20000, n0, n1, `rgb(${col})`);
+  ctx.fillStyle = 'rgb(200,198,124)'; ctx.fillRect(0, hz, W, H); // 지평선 아래는 먼 초원 색 (잔디 그림 평균색)
+  // 잔디 그림을 바닥에 원근으로 깔기: 앞뒤 띠 × 좌우 조각마다 평면 변환으로 패턴을 붙임 (땅에 고정 → 걸으면 발밑으로 흘러옴)
+  if (!GPAT && GRASS_IMG.complete && GRASS_IMG.naturalWidth) {
+    // 그림 가장자리가 이어지지 않아서 상하좌우로 뒤집은 4장을 붙여 이음새 없는 타일로 만듦
+    const w = GRASS_IMG.naturalWidth, h = GRASS_IMG.naturalHeight, t = document.createElement('canvas'), g = t.getContext('2d');
+    t.width = w * 2; t.height = h * 2;
+    [[1, 1, 0, 0], [-1, 1, 2, 0], [1, -1, 0, 2], [-1, -1, 2, 2]].forEach(([fx, fy, ox, oy]) => { g.setTransform(fx, 0, 0, fy, ox * w, oy * h); g.drawImage(GRASS_IMG, 0, 0); });
+    GPAT = ctx.createPattern(t, 'repeat');
   }
+  let n0 = FOCUS - C.P - C.walk + C.walk; // 눈 위치(걷는 사람 기준)
+  n0 = Math.max(n0, FOCUS - C.P);
+  while (n0 < FAR) {
+    const st = 40 + Math.max(0, n0 - (FOCUS - C.P)) * .08, n1 = n0 + st;
+    const fade = Math.min(1, Math.max(0, (n0 - 2500) / 3000)); // 멀수록 옅게
+    for (let x0 = -6000; x0 < 6000; x0 += 500) texQuad(x0, x0 + 500, n0, n1, fade);
+    n0 = n1;
+  }
+}
+const GRASS_IMG = new Image(); GRASS_IMG.src = 'img/grass.webp'; let GPAT = null;
+const TILE_W = 1400, TILE_D = TILE_W * 1024 / 1536; // 잔디 그림 한 장이 땅에서 차지하는 크기
+function texQuad(x0, x1, n0, n1, fade) {
+  // 조각 가운데·띠 가운데 기준으로 변환을 구해 이웃 조각과 이음새가 덜 보이게
+  const xc = (x0 + x1) / 2, nm = (n0 + n1) / 2;
+  const c = [[x0, nm], [x1, nm], [xc, n0], [xc, n1]].map(([x, n]) => cam3(x, n));
+  if (c.some(q => q[1] < 60) || !GPAT) { quad(x0, x1, n0, n1, 'rgb(200,198,124)'); return; }
+  const [pl, pr, pn, pf] = c.map(([X, d]) => proj(X, d, C.eye));
+  if (Math.max(pl[0], pr[0]) < -50 || Math.min(pl[0], pr[0]) > W + 50) return; // 화면 밖 조각은 건너뜀
+  const U = [(pr[0] - pl[0]) / (x1 - x0), (pr[1] - pl[1]) / (x1 - x0)], V = [(pf[0] - pn[0]) / (n1 - n0), (pf[1] - pn[1]) / (n1 - n0)];
+  const p00 = [(pl[0] + pr[0]) / 2 - U[0] * (xc - x0) - V[0] * (nm - n0), (pl[1] + pr[1]) / 2 - U[1] * (xc - x0) - V[1] * (nm - n0)];
+  const sx = TILE_W / GRASS_IMG.naturalWidth, sy = -TILE_D / GRASS_IMG.naturalHeight, wf = C.walk + n0;
+  GPAT.setTransform(new DOMMatrix([U[0] * sx, U[1] * sx, V[0] * sy, V[1] * sy, p00[0] - U[0] * (x0 + 900) - V[0] * wf, p00[1] - U[1] * (x0 + 900) - V[1] * wf]));
+  quad(x0, x1, n0, n1, GPAT);
+  if (fade > 0) quad(x0, x1, n0, n1, `rgba(200,198,124,${fade})`);
 }
 // 바닥 사각형: 눈 앞(NEAR)으로 잘라서 그림
 function quad(x0, x1, f0, f1, color) {
