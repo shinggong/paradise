@@ -271,7 +271,7 @@ function render() {
   const wp = Math.min(1, Math.max(0, (cp - .2) / .8));
   const ease = wp < .5 ? 2 * wp * wp : 1 - Math.pow(-2 * wp + 2, 2) / 2;
   const walk = ease * TRAVEL;
-  const eye = 4 + (EYE - 4) * rise;
+  const eye = 45 + (EYE - 45) * rise; // 시작 눈높이를 땅에서 살짝 띄워 나무·텐트가 땅에 붙어 보이게
   const t = .5;                                          // 원근 강도 고정 (앞뒤 이동은 스크롤로만)
   const P = P_FLAT * Math.pow(P_DEEP / P_FLAT, t);
   const hov = .25 + .75 * rise;                          // 스크롤 전엔 좌우 호버를 약하게
