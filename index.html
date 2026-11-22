@@ -8,7 +8,7 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { background: #9cc6d8; color: #fff; font-family: "Pretendard", -apple-system, sans-serif; overflow-x: clip; touch-action: pan-y; } /* 가로 손짓은 브라우저가 가져가지 않게 (사파리 좌우 스와이프) */
   .track { height: 300vh; position: relative; }
-  .stage { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+  .stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
   .bg { display: none; } /* 하늘·언덕은 캔버스에서 지평선 위치에 맞춰 그림 */
   .bg svg { width: 100%; height: 100%; display: block; }
   #ground, #gl { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -187,7 +187,8 @@ place('<img src="img/stage.webp" alt="">', 0, -10600, 960, 971);
 const track = document.querySelector('.track'), hint = document.getElementById('hint'), bg = document.getElementById('bg');
 const cv = document.getElementById('ground'), ctx = cv.getContext('2d');
 let mx = 0, my = 0, cmx = 0, cmy = 0, p = 0, cp = 0, W = 0, H = 0;
-function resize() { const r = devicePixelRatio || 1; W = innerWidth; H = innerHeight; cv.width = W * r; cv.height = H * r; ctx.setTransform(r, 0, 0, r, 0, 0); }
+// 화면 크기는 실제 무대(.stage) 크기로 — 모바일은 주소창이 접히고 펴질 때 innerHeight와 100vh가 달라져서 바닥과 물건이 어긋남
+function resize() { const r = devicePixelRatio || 1; W = layer.clientWidth || innerWidth; H = layer.clientHeight || innerHeight; cv.width = W * r; cv.height = H * r; ctx.setTransform(r, 0, 0, r, 0, 0); }
 resize(); addEventListener('resize', resize);
 let lastTouch = 0; // 터치 뒤에 아이폰이 흉내 내는 마우스 이동은 무시
 addEventListener('mousemove', e => { if (performance.now() - lastTouch < 1000) return; mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5; });
@@ -233,8 +234,9 @@ function drawGround() {
   if (SKY.complete && SKY.naturalWidth) {
     // 수채화 하늘: 지평선에 아랫단을 맞추고 화면을 덮음, 좌우 호버 때 살짝 따라 움직임 (원본 가장자리 종이 여백 4%는 잘라냄)
     const cw = SKY.naturalWidth * .92, ch = SKY.naturalHeight * .92, sx = SKY.naturalWidth * .04, sy = SKY.naturalHeight * .04;
-    const sc = Math.max(W * 1.2 / cw, (hs + 60) / ch), dw = cw * sc, dh = ch * sc;
-    ctx.drawImage(SKY, sx, sy, cw, ch, (W - dw) / 2 + ox * .25, hs + 60 - dh, dw, dh);
+    // 위치는 하늘 기준(hs, 천천히 움직임)으로 잡되, 아랫단이 지평선(hz) 아래까지 덮도록 늘림 → 인트로 때 잘린 아랫단이 안 보임
+    const sc0 = Math.max(W * 1.2 / cw, (hs + 60) / ch), top = hs + 60 - ch * sc0, dh = Math.max(ch * sc0, hz + 60 - top), dw = cw * dh / ch;
+    ctx.drawImage(SKY, sx, sy, cw, ch, (W - dw) / 2 + ox * .25, top, dw, dh);
   }
   // 구름: 천천히 흘러가고, 좌우 호버 때 높이(거리)에 따라 조금씩 다르게 움직임
   const now = performance.now() / 1000;
@@ -423,6 +425,7 @@ function drawGL() {
 }
 
 function render() {
+  if (layer.clientWidth !== W || layer.clientHeight !== H) resize(); // 크기 바뀌면 바로 맞춤
   cp += (p - cp) * .07; cmx += (mx - cmx) * .07; cmy += (my - cmy) * .07;
   // 스크롤 앞부분: 땅에 붙어 있던 눈이 올라가며 바닥면이 드러남(평면 → 입체), 뒷부분: 앞으로 걸어감
   const rr = Math.min(1, cp / .35), rise = rr * rr * (3 - 2 * rr);
