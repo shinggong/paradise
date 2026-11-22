@@ -162,15 +162,13 @@ tent('tent2', 1250, -6600, 0); // 오른쪽: 닫힌 아이보리 (관목보다 �
 place(img('img/wood.webp'), 1450, -6100, 176, 197); // 장작: 아이보리 텐트 오른쪽 앞
 place(img('img/suvfront.webp'), 1860, -5150, 300, 297); SHADOWS.push([1860 * KX, 5150 * KZ, 300, 'car']); // 정면 SUV: 장작 앞, 더 오른쪽
 shrub(4, 1830, -5450, 280); // SUV 뒤 관목
-// 무대 앞 가운데에서 춤추는 두 사람 (영상에서 뽑은 22장, 8fps 스톱모션)
-const DANCE = Array.from({ length: 22 }, (_, i) => Object.assign(new Image(), { src: `img/dance/d${String(i).padStart(2, '0')}.webp` }));
-place('<img id="dance" src="img/dance/d00.webp" alt="">', 0, -9000, 586, 504); // 그림 원본 920x791
-SHADOWS.push([-170 * KX, 9000 * KZ, 200, 'car'], [170 * KX, 9000 * KZ, 200, 'car']);
-{ // 스톱모션: 장마다 아주 살짝 흔들림(손으로 옮긴 듯), 정수 픽셀만 (회전·소수점은 흐려 보임)
-  const el = document.getElementById('dance'); let f = 0;
-  const N = DANCE.length, seq = [...Array(N).keys(), ...Array.from({ length: N - 2 }, (_, i) => N - 2 - i)]; // 0→21→1 되감기
-  setInterval(() => { if (!wantPlay) return; // 노래가 꺼져 있으면 춤도 멈춤
-    f = (f + 1) % seq.length; const fr = DANCE[seq[f]]; if (fr.complete) el.src = fr.src; el.style.transform = `translate(${Math.round((Math.random() - .5) * 3)}px, ${Math.round((Math.random() - .5) * 2)}px)`; }, 1000 / 8); }
+// 무대 앞 가운데에서 춤추는 두 사람 (영상에서 뽑은 65장, 24fps, 앞→뒤 되감기)
+const DANCE = Array.from({ length: 65 }, (_, i) => Object.assign(new Image(), { src: `img/dance/d${String(i).padStart(2, '0')}.webp` }));
+place('<img id="dance" src="img/dance/d00.webp" alt="">', 0, -8400, 586, 505); // 그림 원본 920x791
+SHADOWS.push([-150, 8400 * KZ, 300, 'person'], [95, 8400 * KZ, 300, 'person']); // 두 사람 발밑
+{ const el = document.getElementById('dance'); let f = 0;
+  const N = DANCE.length, seq = [...Array(N).keys(), ...Array.from({ length: N - 2 }, (_, i) => N - 2 - i)];
+  setInterval(() => { if (!wantPlay) return; f = (f + 1) % seq.length; const fr = DANCE[seq[f]]; if (fr.complete) el.src = fr.src; }, 1000 / 24); }
 place(img('img/scarecrow.webp'), -1250, -5700, 160, 211);
 shrub(1, -1230, -5450, 260); // 허수아비 아랫부분을 살짝 가리는 관목 // 허수아비: 왼쪽 앞 들판
 tent('dome2', 1150, -11800, 1, 1.45); // 뒤로 간 만큼 키워서 원래 보이던 크기로 // 분홍 텐트는 무대 뒤로
@@ -409,7 +407,7 @@ function drawGL() {
   // 텐트: 바닥이 둥근 원 → 보이는 밑단이 원의 앞쪽 테두리라서 원 중심을 반지름만큼 뒤에 둠 (밑단을 따라 그림자가 닿음)
   // 차: 바퀴 사이 길쭉한 타원
   const sh = new Float32Array(64);
-  SHADOWS.slice(0, 16).forEach(([x, f, w, t], i) => sh.set(t === 'tent' ? [x, f + w * .44, w * .52, w * .5] : [x + w * .02, f + w * .1, w * .5, w * .14], i * 4));
+  SHADOWS.slice(0, 16).forEach(([x, f, w, t], i) => sh.set(t === 'tent' ? [x, f + w * .44, w * .52, w * .5] : t === 'person' ? [x + w * .08, f + w * .06, w * .42, w * .2] : [x + w * .02, f + w * .1, w * .5, w * .14], i * 4));
   g.uniform4fv(U('uSh[0]'), sh); g.uniform1i(U('uShN'), Math.min(16, SHADOWS.length));
   g.drawArrays(g.TRIANGLE_STRIP, 0, 4);
 }
@@ -439,7 +437,7 @@ function render() {
     let show = d > NEAR + 10;
     if (show) {
       const [sx, sy, s] = proj(X, d, eye - (EYE - it.bottom)); // 땅 높이는 눈높이에 따라
-      const L = sx - it.w / 2 * s; let T = sy - it.h * s - (it === titleItem && H > W ? H * .05 : 0); // 세로 화면이면 제목을 살짝 위로
+      const L = sx - it.w / 2 * s; let T = sy - it.h * s - (it === titleItem && H > W ? -H * .02 : 0); // 세로 화면이면 제목을 살짝 위로
       if (it === titleItem) T += Math.max(0, 58 - T) * (1 - Math.min(1, cp / .15));
       if (it === titleItem && THUMB) T = H * .06; // 시작 화면에서 제목 윗부분이 화면 위로 잘리지 않게 (스크롤하면 원래대로)
       show = L < W && L + it.w * s > 0 && T < H && s < 40 && (it.h > 400 || it.h * s < H * .75); // 눈앞에서 너무 커진 풀·꽃은 숨김 (무대 같은 큰 건 제외)
