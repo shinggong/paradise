@@ -161,9 +161,9 @@ shrub(4, 1830, -5450, 280); // SUV 뒤 관목
 const DANCE = Array.from({ length: 22 }, (_, i) => Object.assign(new Image(), { src: `img/dance/d${String(i).padStart(2, '0')}.webp` }));
 place('<img id="dance" src="img/dance/d00.webp" alt="">', 0, -9000, 586, 504); // 그림 원본 920x791
 SHADOWS.push([-170 * KX, 9000 * KZ, 200, 'car'], [170 * KX, 9000 * KZ, 200, 'car']);
-{ // 스톱모션: 장마다 아주 살짝 흔들림(손으로 옮긴 듯)
+{ // 스톱모션: 장마다 아주 살짝 흔들림(손으로 옮긴 듯), 정수 픽셀만 (회전·소수점은 흐려 보임)
   const el = document.getElementById('dance'); let f = 0;
-  setInterval(() => { f = (f + 1) % DANCE.length; if (DANCE[f].complete) el.src = DANCE[f].src; el.style.transform = `translate(${Math.round((Math.random() - .5) * 3)}px, ${Math.round((Math.random() - .5) * 2)}px)`; // 정수 픽셀만 (회전·소수점은 흐려 보임) }, 1000 / 8); }
+  setInterval(() => { f = (f + 1) % DANCE.length; if (DANCE[f].complete) el.src = DANCE[f].src; el.style.transform = `translate(${Math.round((Math.random() - .5) * 3)}px, ${Math.round((Math.random() - .5) * 2)}px)`; }, 1000 / 8); }
 place(img('img/scarecrow.webp'), -1250, -5700, 160, 211);
 shrub(1, -1230, -5450, 260); // 허수아비 아랫부분을 살짝 가리는 관목 // 허수아비: 왼쪽 앞 들판
 tent('dome2', 1150, -11800, 1, 1.45); // 뒤로 간 만큼 키워서 원래 보이던 크기로 // 분홍 텐트는 무대 뒤로
