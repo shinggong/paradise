@@ -161,14 +161,14 @@ function drawGround() {
     ctx.lineTo(W + 50, hz + 2); ctx.closePath(); ctx.fillStyle = col; ctx.fill();
   };
   dune(170, 50, '#e4d2a6', .4, .6); dune(90, 14, '#d8c393', 2.1, 1);
-  ctx.fillStyle = '#d9c69a'; ctx.fillRect(0, hz, W, 40 * z);
-  ctx.fillStyle = '#6a9439'; ctx.fillRect(0, hz + 40 * z * (1 - C.rise), W, H); // 처음엔 바닥이 옆에서 본 것처럼 얇은 띠
+  ctx.fillStyle = '#c9c48a'; ctx.fillRect(0, hz, W, 3);
+  ctx.fillStyle = '#6f9b3d'; ctx.fillRect(0, hz + 3, W, H); // 지평선 아래는 초원
   const step = 60, base = Math.floor((C.walk + FOCUS - C.P) / step) * step; // 줄무늬는 땅에 고정 → 걸으면 발밑으로 흘러옴
   const sand = [217, 198, 154];
   for (let f0 = base; f0 < C.walk + FAR; f0 += step) {
     const n0 = f0 - C.walk, n1 = n0 + step; // 걷는 사람 기준 앞쪽 거리
     const k = Math.round(f0 / step) & 1;
-    const fade = Math.min(1, Math.max(0, (n0 - 2200) / 3200));
+    const fade = Math.min(1, Math.max(0, (n0 - 4200) / 4000)) * .6; // 아주 먼 곳만 살짝 흐리게
     const g = k ? [111, 155, 61] : [124, 170, 71];
     const col = g.map((v, i) => Math.round(v + (sand[i] - v) * fade));
     quad(-20000, 20000, n0, n1, `rgb(${col})`);
@@ -209,7 +209,7 @@ function render() {
     if (show) {
       const [sx, sy, s] = proj(X, d, eye - (EYE - it.bottom)); // 땅 높이는 눈높이에 따라
       const L = sx - it.w / 2 * s, T = sy - it.h * s - (it === titleItem && H > W ? H * .1 : 0); // 세로 화면이면 제목을 살짝 위로
-      show = L < W && L + it.w * s > 0 && T < H && s < 40 && it.h * s < H * .75; // 눈앞에서 너무 커진 건 숨김
+      show = L < W && L + it.w * s > 0 && T < H && s < 40 && (it.h > 400 || it.h * s < H * .75); // 눈앞에서 너무 커진 풀·꽃은 숨김 (무대 같은 큰 건 제외)
       if (show) { it.d.style.transform = `translate3d(${L}px, ${T}px, 0) scale(${s})`; it.d.style.zIndex = Math.round(100000 - d); }
     }
     if (show !== it.shown) { it.d.style.display = show ? '' : 'none'; it.shown = show; }
