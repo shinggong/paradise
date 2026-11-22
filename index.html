@@ -146,9 +146,9 @@ const tent = (n, x, z, f) => { place(img(`img/${n}.webp`, f), x, z, ...TENT[n]);
 // 왼쪽
 tent('teepee', -1700, -6200, 0); tent('tent', -2400, -6900, 0); tent('tent', -1900, -9400, 1); // 무대 바로 왼쪽 3개는 제거
 // 오른쪽: 아이보리 3개(열린 tent, 닫힌 tent2) + 하늘색 열린 돔 1개
-tent('tent', 1950, -6300, 1); tent('tent2', 1500, -8000, 0); tent('dome2', 950, -9000, 1); tent('tent2', 1800, -9700, 1);
+tent('tent2', 1500, -8000, 0); tent('dome2', 950, -9000, 1); // 오른쪽: 닫힌 아이보리 1 + 분홍 1
 // 무대 뒤
-tent('teepee', 750, -11600, 0);
+
 // 망원경
 place(img('img/telescope.webp'), -1500, -7300, 120, 149);
 place('<img src="img/truck.webp" alt="">', -900, -7000, 650, 278);
