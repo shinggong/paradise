@@ -212,13 +212,7 @@ function drawGround() {
   }
   ctx.fillStyle = 'rgb(200,198,124)'; ctx.fillRect(0, hz, W, H); // 지평선 아래는 먼 초원 색 (잔디 그림 평균색)
   // 잔디 그림을 바닥에 원근으로 깔기: 앞뒤 띠 × 좌우 조각마다 평면 변환으로 패턴을 붙임 (땅에 고정 → 걸으면 발밑으로 흘러옴)
-  if (!GPAT && GRASS_IMG.complete && GRASS_IMG.naturalWidth) {
-    // 그림 가장자리가 이어지지 않아서 상하좌우로 뒤집은 4장을 붙여 이음새 없는 타일로 만듦
-    const w = GRASS_IMG.naturalWidth, h = GRASS_IMG.naturalHeight, t = document.createElement('canvas'), g = t.getContext('2d');
-    t.width = w * 2; t.height = h * 2;
-    [[1, 1, 0, 0], [-1, 1, 2, 0], [1, -1, 0, 2], [-1, -1, 2, 2]].forEach(([fx, fy, ox, oy]) => { g.setTransform(fx, 0, 0, fy, ox * w, oy * h); g.drawImage(GRASS_IMG, 0, 0); });
-    GPAT = ctx.createPattern(t, 'repeat');
-  }
+  if (!GPAT && GRASS_IMG.complete && GRASS_IMG.naturalWidth) GPAT = ctx.createPattern(GRASS_IMG, 'repeat'); // 직접 만든 이음새 없는 수채화 잔디 (tools/make_grass.py)
   let n0 = FOCUS - C.P - C.walk + C.walk; // 눈 위치(걷는 사람 기준)
   n0 = Math.max(n0, FOCUS - C.P);
   while (n0 < FAR) {
