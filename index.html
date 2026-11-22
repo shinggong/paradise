@@ -126,24 +126,27 @@ const titleItem = items[items.length - 1];
 const SHRUB = [[801, 315], [900, 210], [489, 311], [824, 267], [584, 341], [900, 416]];
 const img = (src, flip) => `<img src="${src}" alt=""${flip ? ' style="transform:scaleX(-1)"' : ''}>`;
 const shrub = (n, x, z, w) => place(img(`img/shrub${n}.webp`, rnd() < .5), x, z, w, w * SHRUB[n - 1][1] / SHRUB[n - 1][0]);
-for (let i = 0; i < 16; i++) { // 흩어진 관목은 바깥쪽에만 (캠프·텐트를 가리지 않게)
+for (let i = 0; i < 24; i++) {
   const side = rnd() < .5 ? -1 : 1;
-  shrub(1 + Math.floor(rnd() * 6), side * R(2400, 3300), R(-11500, -300), R(300, 440));
+  shrub(1 + Math.floor(rnd() * 6), side * R(700, 2600), R(-11500, -300), R(300, 440));
 }
 // 앞쪽 수풀: 시작 화면(눈높이 낮을 때) 건물 아랫단을 가려줌, 눈이 올라가면 화면 아래로 내려감
 for (let x = -1900; x <= 1900; x += R(260, 360)) if (Math.abs(x) > 420) shrub([1, 2, 4][Math.floor(rnd() * 3)], x, -R(1000, 1500), R(220, 320)); // 무대 앞은 비워둠, 낮은 관목만
 // 캠프 (무대 근처)
 shrub(3, -2900, -5200, 560); // 하늘색 차 앞에 있던 관목 → 왼쪽으로
 shrub(5, -2100, -7600, 620);
-shrub(6, 3000, -4300, 640);
+shrub(6, 1900, -4300, 640);
 // 천막 (그림 비율 864x1001), 원뿔 텐트 (672x1005)
 // 텐트 여러 종류 [그림, 가로, 세로] — 그림 비율대로
 const TENT = { tent: [570, 390], tent2: [570, 370], dome1: [600, 332], dome2: [600, 348], dome3: [600, 341], teepee: [375, 409] }; // 1.5배
 const tent = (n, x, z, f) => place(img(`img/${n}.webp`, f), x, z, ...TENT[n]);
 // 앞(가까움) → 뒤(무대 근처)로 나눠 배치, 무대 정면은 비워둠
-tent('teepee', -1700, -6200, 0); tent('dome2', 1500, -6300, 1); tent('tent', -2400, -6900, 0); tent('dome1', 2500, -7000, 1);
-tent('tent2', 1100, -8000, 1); tent('dome3', -1000, -8300, 0); tent('teepee', 2200, -8600, 1);
-tent('tent', -1900, -9400, 1); tent('dome1', 1700, -9700, 0); tent('tent2', -900, -10100, 1); tent('dome2', 950, -10200, 0);
+// 왼쪽 5개
+tent('teepee', -1700, -6200, 0); tent('tent', -2400, -6900, 0); tent('dome3', -1000, -8300, 0); tent('tent', -1900, -9400, 1); tent('tent2', -900, -10100, 1);
+// 오른쪽: 아이보리 3개(열린 tent, 닫힌 tent2) + 하늘색 2개(닫힌 dome1, 열린 dome2)
+tent('dome1', 1050, -6500, 1); tent('tent', 1950, -6300, 1); tent('tent2', 1500, -8000, 0); tent('dome2', 950, -9000, 1); tent('tent2', 1800, -9700, 1);
+// 무대 뒤 2개
+tent('dome3', -750, -11800, 1); tent('teepee', 750, -11600, 0);
 // 망원경
 place(img('img/telescope.webp'), -1500, -7300, 120, 149);
 place('<img src="img/truck.webp" alt="">', -900, -7000, 500, 214);
