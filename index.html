@@ -126,29 +126,27 @@ const titleItem = items[items.length - 1];
 const SHRUB = [[801, 315], [900, 210], [489, 311], [824, 267], [584, 341], [900, 416]];
 const img = (src, flip) => `<img src="${src}" alt=""${flip ? ' style="transform:scaleX(-1)"' : ''}>`;
 const shrub = (n, x, z, w) => place(img(`img/shrub${n}.webp`, rnd() < .5), x, z, w, w * SHRUB[n - 1][1] / SHRUB[n - 1][0]);
-for (let i = 0; i < 24; i++) {
+for (let i = 0; i < 16; i++) { // 흩어진 관목은 바깥쪽에만 (캠프·텐트를 가리지 않게)
   const side = rnd() < .5 ? -1 : 1;
-  shrub(1 + Math.floor(rnd() * 6), side * R(700, 2600), R(-11500, -300), R(300, 440));
+  shrub(1 + Math.floor(rnd() * 6), side * R(2400, 3300), R(-11500, -300), R(300, 440));
 }
 // 앞쪽 수풀: 시작 화면(눈높이 낮을 때) 건물 아랫단을 가려줌, 눈이 올라가면 화면 아래로 내려감
 for (let x = -1900; x <= 1900; x += R(260, 360)) if (Math.abs(x) > 420) shrub([1, 2, 4][Math.floor(rnd() * 3)], x, -R(1000, 1500), R(220, 320)); // 무대 앞은 비워둠, 낮은 관목만
 // 캠프 (무대 근처)
-shrub(3, -1500, -5200, 560);
+shrub(3, -2900, -5200, 560); // 하늘색 차 앞에 있던 관목 → 왼쪽으로
 shrub(5, -2100, -7600, 620);
-shrub(6, 1900, -4300, 640);
+shrub(6, 3000, -4300, 640);
 // 천막 (그림 비율 864x1001), 원뿔 텐트 (672x1005)
 // 텐트 여러 종류 [그림, 가로, 세로] — 그림 비율대로
-const TENT = { tent: [380, 260], tent2: [380, 247], dome1: [400, 221], dome2: [400, 232], dome3: [400, 227], teepee: [250, 272] };
+const TENT = { tent: [570, 390], tent2: [570, 370], dome1: [600, 332], dome2: [600, 348], dome3: [600, 341], teepee: [375, 409] }; // 1.5배
 const tent = (n, x, z, f) => place(img(`img/${n}.webp`, f), x, z, ...TENT[n]);
-tent('tent', -1100, -8200, 0); tent('dome2', -1750, -9000, 0); tent('dome1', 1300, -8600, 1); tent('tent2', 2000, -9400, 0);
-tent('dome3', -700, -9800, 1); tent('tent2', 950, -9900, 1); tent('dome1', -2300, -8300, 0); tent('tent', 2600, -8200, 1);
-tent('teepee', 1600, -7600, 0); tent('teepee', -2400, -10400, 1);
-// 무대 옆 드럼 두 개, 망원경
-place(img('img/drum1.webp'), -440, -10250, 70, 120);
-place(img('img/drum2.webp'), 470, -10300, 70, 108);
+// 앞(가까움) → 뒤(무대 근처)로 나눠 배치, 무대 정면은 비워둠
+tent('teepee', -1700, -6200, 0); tent('dome2', 1500, -6300, 1); tent('tent', -2400, -6900, 0); tent('dome1', 2500, -7000, 1);
+tent('tent2', 1100, -8000, 1); tent('dome3', -1000, -8300, 0); tent('teepee', 2200, -8600, 1);
+tent('tent', -1900, -9400, 1); tent('dome1', 1700, -9700, 0); tent('tent2', -900, -10100, 1); tent('dome2', 950, -10200, 0);
+// 망원경
 place(img('img/telescope.webp'), -1500, -7300, 120, 149);
 place('<img src="img/truck.webp" alt="">', -900, -7000, 500, 214);
-place('<img src="img/suv.webp" alt="">', 1050, -7400, 400, 259); // 오른쪽 SUV (그림 비율 800x517)
 place('<img src="img/stage.webp" alt="">', 0, -10600, 960, 971);
 
 // ===== 카메라 계산 (바닥 캔버스와 물건이 같은 식을 씀) =====
@@ -318,7 +316,6 @@ function render() {
   const bob = Math.sin(walk / 70) * 3 * Math.min(1, cp * 20) * (1 - cp);
   C = { P, walk, strafe: cmx * 2 * STRAFE * hov, cos: Math.cos(a), sin: Math.sin(a), zoom: H > W ? W / 560 : Math.min(H / 900, W / 1440), cx: W / 2, hy: H * (H > W ? .74 - .2 * rise : .88 - .46 * rise) + bob, eye, yaw: a, rise };
   drawGround();
-  drawShadows();
   drawGrass();
   for (const it of items) {
     const [X, d] = cam3(it.x, -it.z - walk);
