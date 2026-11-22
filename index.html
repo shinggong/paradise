@@ -443,7 +443,7 @@ function render() {
   const iOff = THUMB ? 0 : (1 - ie) * H * 1.15;
   // 제목은 배경보다 0.45초 늦게, 조금 더 천천히 따라 내려옴 (시간차로 입체감)
   const it1 = INTRO.t0 === null ? 0 : Math.min(1, Math.max(0, (performance.now() - INTRO.t0 - 450) / 2700)), iOffT = THUMB ? 0 : Math.pow(1 - it1, 3) * H * 1.15;
-  C = { iOff, iOffT, P, walk, strafe: cmx * 2 * STRAFE * hov, cos: Math.cos(a), sin: Math.sin(a), zoom: H > W ? W / 560 : Math.min(H / 900, W / 1440), cx: W / 2, hy: H * (H > W ? .74 - .2 * rise : .88 - .46 * rise) + bob + iOff, eye, yaw: a, rise };
+  C = { iOff, iOffT, P, walk, strafe: cmx * 2 * STRAFE * hov, cos: Math.cos(a), sin: Math.sin(a), zoom: H > W ? W / 560 : Math.min(H / 900, W / 1440), cx: W / 2, hy: H * (H > W ? .74 - .15 * rise : .88 - .35 * rise) + bob + iOff, eye, yaw: a, rise };
   drawGround();
   drawGL();
   drawGrass();
