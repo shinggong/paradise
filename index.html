@@ -20,7 +20,13 @@
   .title3d p { font-family: -apple-system, sans-serif; font-size: 20px; letter-spacing: .5em; margin-top: 24px; opacity: .9; }
   nav { position: fixed; top: 0; left: 0; right: 0; z-index: 300000; display: flex; justify-content: space-between; align-items: center; padding: 22px 40px; font-size: 13px; letter-spacing: .15em; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.2); }
   nav .logo { font-family: Georgia, serif; font-size: 22px; letter-spacing: 0; }
-  nav div { display: flex; gap: 32px; }
+  nav div { display: flex; gap: 32px; align-items: center; }
+  #sound { background: none; border: 0; padding: 4px; cursor: pointer; display: flex; filter: drop-shadow(0 1px 4px rgba(0,0,0,.25)); }
+  #sound .on { display: none; } #sound.playing .on { display: inline; } #sound.playing .off { display: none; }
+  /* 소리를 켜면 오른쪽 위에 작은 플레이어가 보임 (유튜브 공식 뮤직비디오) */
+  #player { position: fixed; top: 64px; right: 40px; width: 192px; height: 108px; border-radius: 10px; overflow: hidden; z-index: 300000; box-shadow: 0 6px 20px rgba(0,0,0,.2); opacity: 0; pointer-events: none; transform: translateY(-6px); transition: opacity .3s, transform .3s; }
+  #player.show { opacity: 1; pointer-events: auto; transform: none; }
+  #player iframe { width: 100%; height: 100%; border: 0; display: block; }
   .hint { position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); font-size: 12px; letter-spacing: .3em; z-index: 300000; transition: opacity .3s; text-shadow: 0 1px 6px rgba(0,0,0,.3); }
   .after { min-height: 100vh; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; background: #d9c69a; color: #4a3b22; text-align: center; padding: 40px; }
   .after h2 { font-family: Georgia, serif; font-size: clamp(32px, 5vw, 64px); font-weight: 400; }
@@ -28,7 +34,10 @@
 </style>
 </head>
 <body>
-<nav><div><span>STORY</span><span>MAP</span></div><span class="logo">들판</span><div><span>SHOP</span><span>CONTACT</span></div></nav>
+<nav><div><span>STORY</span><span>MAP</span></div><div><span>SHOP</span><span>CONTACT</span><button id="sound" aria-label="소리 켜기" title="소리 켜기/끄기">
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#fff"/><g class="on"><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></g><g class="off"><path d="M17 9l5 6M22 9l-5 6"/></g></svg>
+</button></div></nav>
+<div id="player"><div id="yt"></div></div>
 
 <div class="track">
   <div class="stage">
@@ -105,16 +114,6 @@ function grass(svg, x, z, w, h) {
 // 제목 (처음 초점 위치에 있어서 평면↔입체 때 크기 유지, 걸어가면 통과)
 place('<div class="title3d"><img src="img/title.webp" alt="Paradise of Rumors"><p>SCROLL TO WALK IN</p></div>', 0, -FOCUS / KZ, 1400, 440, -40, 'obj');
 const titleItem = items[items.length - 1];
-// 잔디·꽃: 아래쪽 입체감의 핵심 (발밑으로 쏟아져 들어옴)
-for (let i = 0; i < 560; i++) {
-  const z = R(-DEPTH + 1500, 9000), x = R(-2600, 2600);
-  const s = R(.8, 1.6);
-  grass(ART.tuft(pick(['#4e7d2a', '#5f8f33', '#86b04f', '#3f6b22'])), x, z, 40 * s, 30 * s);
-}
-for (let i = 0; i < 200; i++) {
-  const z = R(-DEPTH + 2000, 9000), x = R(-2400, 2400);
-  grass(ART.flower(pick(['#ffffff', '#fff4c2', '#f6b6c8', '#c9e6ff'])), x, z, 20, 40);
-}
 // 노란 관목 (이미지 6종, 가로세로 비율)
 const SHRUB = [[801, 315], [900, 210], [489, 311], [824, 267], [584, 341], [900, 416]];
 const img = (src, flip) => `<img src="${src}" alt=""${flip ? ' style="transform:scaleX(-1)"' : ''}>`;
@@ -123,6 +122,8 @@ for (let i = 0; i < 24; i++) {
   const side = rnd() < .5 ? -1 : 1;
   shrub(1 + Math.floor(rnd() * 6), side * R(700, 2600), R(-11500, -300), R(300, 440));
 }
+// 앞쪽 수풀: 시작 화면(눈높이 낮을 때) 건물 아랫단을 가려줌, 눈이 올라가면 화면 아래로 내려감
+for (let x = -1900; x <= 1900; x += R(260, 360)) if (Math.abs(x) > 420) shrub([1, 2, 4][Math.floor(rnd() * 3)], x, -R(1000, 1500), R(220, 320)); // 무대 앞은 비워둠, 낮은 관목만
 // 캠프 (무대 근처)
 shrub(3, -1500, -5200, 560);
 shrub(5, -2100, -7600, 620);
@@ -298,6 +299,21 @@ function render() {
 }
 function frame() { render(); requestAnimationFrame(frame); }
 frame();
+
+// ===== 소리: 악뮤 '소문의 낙원' 공식 뮤직비디오 (유튜브) — 스피커를 누르면 재생/멈춤 =====
+const soundBtn = document.getElementById('sound'), playerBox = document.getElementById('player');
+let yt = null, ytReady = false, wantPlay = false;
+window.onYouTubeIframeAPIReady = () => {
+  yt = new YT.Player('yt', { videoId: 'D54StAZFUrc', playerVars: { playsinline: 1, controls: 0, loop: 1, playlist: 'D54StAZFUrc', rel: 0, modestbranding: 1 },
+    events: { onReady: () => { ytReady = true; if (wantPlay) yt.playVideo(); } } });
+};
+const ytScript = document.createElement('script'); ytScript.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(ytScript);
+soundBtn.addEventListener('click', () => {
+  wantPlay = !wantPlay;
+  soundBtn.classList.toggle('playing', wantPlay); playerBox.classList.toggle('show', wantPlay);
+  soundBtn.setAttribute('aria-label', wantPlay ? '소리 끄기' : '소리 켜기');
+  if (ytReady) wantPlay ? (yt.unMute(), yt.playVideo()) : yt.pauseVideo();
+});
 </script>
 </body>
 </html>
