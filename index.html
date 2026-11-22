@@ -18,6 +18,12 @@
   .title3d { text-align: center; white-space: nowrap; font-family: "Didot", "Bodoni 72", Georgia, serif; color: #fffdf4; text-shadow: 0 6px 30px rgba(60,90,110,.35); }
   .title3d img { width: 820px; height: auto; display: block; margin: 0 auto; filter: drop-shadow(0 2px 1.5px rgba(110,40,80,.22)) drop-shadow(0 12px 22px rgba(90,50,90,.14)); } /* 글자 바로 아래 옅은 그림자 + 넓게 퍼지는 그림자 */
   .title3d p { font-family: -apple-system, sans-serif; font-size: 20px; letter-spacing: .5em; margin-top: 24px; opacity: .9; }
+  /* 로딩: 하늘 그림만 먼저 보이고, 나머지 그림이 다 불러와지면 사라짐 */
+  #loader { position: fixed; inset: 0; z-index: 400000; background: #9cc6d8 url(img/sky.webp) center/cover; display: flex; align-items: center; justify-content: center; transition: opacity .8s, visibility .8s; }
+  #loader span { font-size: 13px; letter-spacing: .4em; color: #fff; text-shadow: 0 1px 8px rgba(40,70,100,.35); animation: loadPulse 1.6s ease-in-out infinite; }
+  #loader b { font-weight: 400; margin-left: .6em; }
+  #loader.done { opacity: 0; visibility: hidden; }
+  @keyframes loadPulse { 50% { opacity: .45; } }
   nav { position: fixed; top: 0; left: 0; right: 0; z-index: 300000; display: flex; justify-content: space-between; align-items: center; padding: 22px 40px; font-size: 13px; letter-spacing: .15em; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.2); }
   nav .logo { font-family: Georgia, serif; font-size: 22px; letter-spacing: 0; }
   nav div { display: flex; gap: 32px; align-items: center; }
@@ -42,6 +48,7 @@
 </style>
 </head>
 <body>
+<div id="loader"><span>LOADING<b id="loadPct"></b></span></div>
 <nav><div><span>STORY</span><span>MAP</span></div><div><span>SHOP</span><span>CONTACT</span><button id="sound" aria-label="소리 켜기" title="소리 켜기/끄기">
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#fff"/><g class="on"><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/></g><g class="off"><path d="M17 9l5 6M22 9l-5 6"/></g></svg>
 </button></div></nav>
@@ -446,6 +453,17 @@ soundBtn.addEventListener('click', () => {
   soundBtn.setAttribute('aria-label', wantPlay ? '소리 끄기' : '소리 켜기');
   if (ytReady) wantPlay ? (yt.unMute(), yt.playVideo()) : yt.pauseVideo();
 });
+
+// ===== 로딩: 페이지 안 그림 + 캔버스용 그림이 모두 준비되면 로딩 화면 걷기 =====
+(() => {
+  const imgs = [...document.images, SKY, GRASS_IMG, MOTTLE_IMG, ...ROCKS.map(r => r.img), ...CLOUDS.map(c => c.img)];
+  let done = 0; const pct = document.getElementById('loadPct');
+  const tick = () => { done++; pct.textContent = Math.round(done / imgs.length * 100) + '%'; };
+  const wait = im => (im.complete && im.naturalWidth ? Promise.resolve() : new Promise(r => { im.addEventListener('load', r, { once: true }); im.addEventListener('error', r, { once: true }); })).then(() => im.decode ? im.decode().catch(() => {}) : 0).then(tick);
+  const finish = () => document.getElementById('loader').classList.add('done');
+  Promise.all(imgs.map(wait)).then(() => requestAnimationFrame(() => requestAnimationFrame(finish)));
+  setTimeout(finish, 15000); // 너무 오래 걸리면 그냥 열기
+})();
 </script>
 </body>
 </html>
