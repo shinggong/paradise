@@ -247,9 +247,13 @@ function render() {
       const [sx, sy, s] = proj(X, d, eye - (EYE - it.bottom)); // 땅 높이는 눈높이에 따라
       const L = sx - it.w / 2 * s, T = sy - it.h * s - (it === titleItem && H > W ? H * .1 : 0); // 세로 화면이면 제목을 살짝 위로
       show = L < W && L + it.w * s > 0 && T < H && s < 40 && (it.h > 400 || it.h * s < H * .75); // 눈앞에서 너무 커진 풀·꽃은 숨김 (무대 같은 큰 건 제외)
+      if (it === titleItem) { // 제목은 다가오며 커지면 흐려지다 사라짐 (너무 크게 키웠다가 돌아올 때 이미지가 덜 그려지는 문제 방지)
+        const k = s / C.zoom, op = Math.min(1, Math.max(0, (2.8 - k) / 1));
+        it.d.style.opacity = op; if (op <= 0) show = false;
+      }
       if (show) { it.d.style.transform = `translate3d(${L}px, ${T}px, 0) scale(${s})`; }
     }
-    if (show !== it.shown) { it.d.style.display = show ? '' : 'none'; it.shown = show; }
+    if (show !== it.shown) { it.d.style.visibility = show ? '' : 'hidden'; it.shown = show; } // display:none 대신 visibility → 다시 보일 때 이미지 새로 안 불러옴
   }
   hint.style.opacity = cp > .03 ? 0 : 1;
 }
