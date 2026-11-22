@@ -157,11 +157,13 @@ tent('tent2', 1250, -6600, 0); // 오른쪽: 닫힌 아이보리 (관목보다 �
 place(img('img/wood.webp'), 1450, -6100, 176, 197); // 장작: 아이보리 텐트 오른쪽 앞
 place(img('img/suvfront.webp'), 1860, -5150, 300, 297); SHADOWS.push([1860 * KX, 5150 * KZ, 300, 'car']); // 정면 SUV: 장작 앞, 더 오른쪽
 shrub(4, 1830, -5450, 280); // SUV 뒤 관목
-// 무대 앞 가운데에서 춤추는 두 사람 (영상에서 뽑은 32장, 12fps로 반복)
-const DANCE = Array.from({ length: 32 }, (_, i) => Object.assign(new Image(), { src: `img/dance/d${String(i).padStart(2, '0')}.webp` }));
-place('<img id="dance" src="img/dance/d00.webp" alt="">', 0, -9000, 488, 420);
+// 무대 앞 가운데에서 춤추는 두 사람 (영상에서 뽑은 22장, 8fps 스톱모션)
+const DANCE = Array.from({ length: 22 }, (_, i) => Object.assign(new Image(), { src: `img/dance/d${String(i).padStart(2, '0')}.webp` }));
+place('<img id="dance" src="img/dance/d00.webp" alt="">', 0, -9000, 586, 504); // 그림 원본 920x791
 SHADOWS.push([-170 * KX, 9000 * KZ, 200, 'car'], [170 * KX, 9000 * KZ, 200, 'car']);
-{ const el = document.getElementById('dance'); let f = 0; setInterval(() => { f = (f + 1) % DANCE.length; if (DANCE[f].complete) el.src = DANCE[f].src; }, 1000 / 12); }
+{ // 스톱모션: 장마다 아주 살짝 흔들림(손으로 옮긴 듯)
+  const el = document.getElementById('dance'); let f = 0;
+  setInterval(() => { f = (f + 1) % DANCE.length; if (DANCE[f].complete) el.src = DANCE[f].src; el.style.transform = `translate(${Math.round((Math.random() - .5) * 3)}px, ${Math.round((Math.random() - .5) * 2)}px)`; // 정수 픽셀만 (회전·소수점은 흐려 보임) }, 1000 / 8); }
 place(img('img/scarecrow.webp'), -1250, -5700, 160, 211);
 shrub(1, -1230, -5450, 260); // 허수아비 아랫부분을 살짝 가리는 관목 // 허수아비: 왼쪽 앞 들판
 tent('dome2', 1150, -11800, 1, 1.45); // 뒤로 간 만큼 키워서 원래 보이던 크기로 // 분홍 텐트는 무대 뒤로
