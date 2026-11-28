@@ -26,6 +26,7 @@
   .thumb .title3d p, .thumb #hint { display: none; }
   /* 화면 녹화용(주소 끝에 ?rec): 오른쪽 위 작은 영상 창을 거의 투명하게 */
   .rec #player { opacity: .01 !important; pointer-events: none !important; }
+  .rec, .rec body { scrollbar-width: none; } .rec::-webkit-scrollbar, .rec body::-webkit-scrollbar { display: none; } /* 녹화용: 스크롤바 숨김 */
   .thumb .title3d img { width: 430px !important; }
   @keyframes loadPulse { 50% { opacity: .45; } }
   nav { position: fixed; top: 0; left: 0; right: 0; z-index: 300000; display: flex; justify-content: space-between; align-items: center; padding: 22px 40px; font-size: 13px; letter-spacing: .15em; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.2); }
